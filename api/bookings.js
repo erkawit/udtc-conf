@@ -1,6 +1,7 @@
 import { q } from '../lib/db.js';
 import { getSession } from '../lib/auth.js';
 import { handler, body, HttpError, requireUser, str, intId } from '../lib/http.js';
+import { fetchLegacyRows, mapLegacyRow } from '../lib/legacy.js';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -18,7 +19,8 @@ const ADMIN_COLS = `${PUBLIC_COLS},
   phone, ip_address, note, source, created_at, updated_at,
   (SELECT display_name FROM users u WHERE u.id = b.updated_by) AS updated_by_name`;
 
-function validate(d) {
+/** lenient = importing old records: fill blanks, keep odd phone/IP values as they were. */
+function validate(d, { lenient = false } = {}) {
   const v = {
     court_name: str(d.court_name, 200),
     meeting_date: str(d.meeting_date, 10),
@@ -31,6 +33,9 @@ function validate(d) {
     phone: str(d.phone, 50),
     ip_address: str(d.ip_address, 15),
   };
+  if (lenient) {
+    for (const k of ['black_case', 'reason', 'contact_name', 'phone', 'ip_address']) if (!v[k]) v[k] = '-';
+  }
   const missing = [];
   if (!v.court_name) missing.push('ชื่อศาล');
   if (!v.meeting_date) missing.push('วันที่');
@@ -44,6 +49,7 @@ function validate(d) {
   if (missing.length) throw new HttpError(400, 'กรุณากรอก: ' + missing.join(', '));
   if (!DATE_RE.test(v.meeting_date) || Number.isNaN(Date.parse(v.meeting_date))) throw new HttpError(400, 'รูปแบบวันที่ไม่ถูกต้อง');
   if (!TIME_RE.test(v.start_time) || !TIME_RE.test(v.end_time)) throw new HttpError(400, 'รูปแบบเวลาไม่ถูกต้อง');
+  if (lenient) return v;
   if (v.end_time <= v.start_time) throw new HttpError(400, 'เวลาสิ้นสุดต้องหลังเวลาเริ่ม');
   if (!IP_RE.test(v.ip_address)) throw new HttpError(400, 'รูปแบบ IP Address ไม่ถูกต้อง (เช่น 192.168.1.10)');
   if (!/^[0-9+\-\s(),#ต่อ]{6,50}$/.test(v.phone)) throw new HttpError(400, 'รูปแบบเบอร์โทรศัพท์ไม่ถูกต้อง');
@@ -64,6 +70,36 @@ async function findConflicts(v, excludeId = 0) {
 
 function conflictError(conflicts) {
   return new HttpError(409, 'ช่วงเวลานี้มีการจองแล้ว', { conflicts });
+}
+
+async function importItems(items, me) {
+  let inserted = 0, skipped = 0;
+  const errors = [];
+  for (const [i, item] of items.entries()) {
+    try {
+      const v = validate(item, { lenient: true });
+      const dup = await q(
+        `SELECT 1 FROM bookings WHERE meeting_date=$1 AND start_time=$2::time AND black_case=$3 AND court_name=$4 LIMIT 1`,
+        [v.meeting_date, v.start_time, v.black_case, v.court_name]
+      );
+      if (dup.length) { skipped++; continue; }
+      const notes = [];
+      if (v.end_time <= v.start_time) notes.push('เวลาสิ้นสุดในข้อมูลเดิมไม่ถูกต้อง');
+      if (!IP_RE.test(v.ip_address) && v.ip_address !== '-') notes.push('IP ในข้อมูลเดิมไม่ถูกต้อง');
+      const createdAt = item.created_at && !Number.isNaN(Date.parse(item.created_at)) ? item.created_at : null;
+      await q(
+        `INSERT INTO bookings (court_name, meeting_date, start_time, end_time, black_case, red_case, reason,
+                               contact_name, phone, ip_address, note, source, updated_by, created_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'import',$12, COALESCE($13::timestamptz, now()))`,
+        [v.court_name, v.meeting_date, v.start_time, v.end_time, v.black_case, v.red_case, v.reason,
+          v.contact_name, v.phone, v.ip_address, notes.join(' / '), me.id, createdAt]
+      );
+      inserted++;
+    } catch (e) {
+      errors.push({ row: i + 1, message: e.message });
+    }
+  }
+  return { inserted, skipped, failed: errors.length, errors: errors.slice(0, 20) };
 }
 
 export default handler(async (req, res) => {
@@ -87,32 +123,19 @@ export default handler(async (req, res) => {
   if (req.method === 'POST') {
     const data = body(req);
 
+    // Pull history straight from the old Google Sheet (server-side, no CORS issues)
+    if (action === 'import-legacy') {
+      const me = await requireUser(req, 'admin');
+      const rows = await fetchLegacyRows();
+      const items = rows.map(mapLegacyRow).filter(Boolean);
+      const result = await importItems(items, me);
+      return res.status(200).json({ ok: true, total: rows.length, ...result });
+    }
+
     if (action === 'import') {
       const me = await requireUser(req, 'admin');
       const items = Array.isArray(data.items) ? data.items.slice(0, 5000) : [];
-      let inserted = 0, skipped = 0;
-      const errors = [];
-      for (const [i, item] of items.entries()) {
-        try {
-          const v = validate({ ...item, ip_address: item.ip_address || '0.0.0.0', phone: item.phone || '-------' });
-          const dup = await q(
-            `SELECT 1 FROM bookings WHERE meeting_date=$1 AND start_time=$2::time AND black_case=$3 AND court_name=$4 LIMIT 1`,
-            [v.meeting_date, v.start_time, v.black_case, v.court_name]
-          );
-          if (dup.length) { skipped++; continue; }
-          await q(
-            `INSERT INTO bookings (court_name, meeting_date, start_time, end_time, black_case, red_case, reason,
-                                   contact_name, phone, ip_address, source, updated_by)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'import',$11)`,
-            [v.court_name, v.meeting_date, v.start_time, v.end_time, v.black_case, v.red_case, v.reason,
-              v.contact_name, v.phone, v.ip_address, me.id]
-          );
-          inserted++;
-        } catch (e) {
-          errors.push({ row: i + 1, message: e.message });
-        }
-      }
-      return res.status(200).json({ ok: true, inserted, skipped, failed: errors.length, errors: errors.slice(0, 20) });
+      return res.status(200).json({ ok: true, ...(await importItems(items, me)) });
     }
 
     const v = validate(data);

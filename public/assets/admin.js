@@ -5,7 +5,6 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 let me = null;
 let bookings = [];
 let users = [];
-const LEGACY_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzTTLtwrE0AOZ8RaEFpF_NhzepWZO_nuvDmmS6o3nEJK5xwA0EMPmYibQ-8pm2mIHcJ/exec';
 const ROLE_LABEL = { admin: 'ผู้ดูแลระบบ', staff: 'เจ้าหน้าที่' };
 const STATUS_LABEL = { confirmed: 'ยืนยันแล้ว', pending: 'รอตรวจสอบ', cancelled: 'ยกเลิก' };
 
@@ -53,8 +52,9 @@ $('#setupForm').addEventListener('submit', async (e) => {
   if ($('#setupPassword').value !== $('#setupPassword2').value) return SwalTheme.fire({ icon: 'warning', title: 'รหัสผ่านไม่ตรงกัน' });
   try {
     const { user } = await api('/api/auth?action=setup', { method: 'POST', data: { display_name: $('#setupName').value, username: $('#setupUsername').value, password: $('#setupPassword').value } });
-    await SwalTheme.fire({ icon: 'success', title: 'สร้างบัญชีผู้ดูแลระบบแล้ว', text: 'ท่านสามารถเพิ่มผู้ใช้งานคนอื่นได้ที่เมนู "ผู้ใช้งาน"' });
     enterApp(user);
+    await SwalTheme.fire({ icon: 'success', title: 'สร้างบัญชีผู้ดูแลระบบแล้ว', text: 'ต่อไประบบจะดึงประวัติการจองจาก Google Sheet เดิมเข้ามาให้อัตโนมัติ' });
+    await importLegacy({ ask: false });
   } catch (err) { alertError(err); }
 });
 
@@ -157,7 +157,7 @@ const bookingsTable = createTable({
     { title: 'คดีดำ / แดง', render: (b) => `<div class="whitespace-nowrap">${esc(b.black_case)}</div>${b.red_case ? `<div class="text-rose-600 whitespace-nowrap">${esc(b.red_case)}</div>` : ''}` },
     { title: 'ผู้ติดต่อ', render: (b) => `<div>${esc(b.contact_name)}</div><div class="text-xs text-slate-500 whitespace-nowrap"><i class="fa-solid fa-phone mr-1"></i>${esc(b.phone)}</div>` },
     { title: 'IP Address', tdClass: 'font-mono text-xs whitespace-nowrap', render: (b) => esc(b.ip_address) },
-    { title: 'สถานะ', render: (b) => statusBadge(b.status) + (b.note ? `<div class="text-xs text-slate-400 mt-1" title="${esc(b.note)}"><i class="fa-regular fa-note-sticky"></i> มีหมายเหตุ</div>` : '') },
+    { title: 'สถานะ', render: (b) => statusBadge(b.status) + (b.source === 'import' ? '<div class="mt-1"><span class="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-500 px-2 py-0.5 text-[11px]"><i class="fa-solid fa-clock-rotate-left"></i>นำเข้า</span></div>' : '') + (b.note ? `<div class="text-xs text-slate-400 mt-1" title="${esc(b.note)}"><i class="fa-regular fa-note-sticky"></i> มีหมายเหตุ</div>` : '') },
     { title: '', tdClass: 'text-right whitespace-nowrap', render: (b) => `
         <button data-act="edit" data-id="${b.id}" class="w-9 h-9 rounded-lg text-navy-700 hover:bg-navy-50" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
         <button data-act="del" data-id="${b.id}" class="w-9 h-9 rounded-lg text-rose-600 hover:bg-rose-50" title="ลบ"><i class="fa-solid fa-trash-can"></i></button>` },
@@ -332,69 +332,36 @@ function printReport(rows, from, to) {
   w.document.open(); w.document.write(html); w.document.close();
 }
 
-/* --- Import from legacy Google Sheet (Apps Script) --- */
-function legacyDate(v) {
-  if (v == null || v === '') return '';
-  const s = String(v).trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) { let y = +m[3]; if (y > 2400) y -= 543; return `${y}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`; }
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
-}
-function legacyTime(v) {
-  if (v == null || v === '') return '';
-  const s = String(v).trim();
-  const m = s.match(/^(\d{1,2})[:.](\d{2})/);
-  if (m && !s.includes('T')) return `${m[1].padStart(2, '0')}:${m[2]}`;
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return '';
-  return new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
-}
-
-$('#importBtn').addEventListener('click', async () => {
-  const r = await SwalTheme.fire({
-    title: 'นำเข้าข้อมูลจากระบบเดิม',
-    html: `<p class="text-left text-sm mb-3">ดึงข้อมูลจาก Google Sheet ของระบบเดิม (ผ่าน Apps Script) แล้วบันทึกลงฐานข้อมูลใหม่ รายการที่ซ้ำ (วันที่ เวลาเริ่ม ศาล และคดีดำเดียวกัน) จะถูกข้าม</p>`,
-    input: 'url', inputValue: LEGACY_SCRIPT_URL, inputLabel: 'URL ของ Apps Script เดิม',
-    showCancelButton: true, confirmButtonText: 'ดึงข้อมูล', showLoaderOnConfirm: true,
-    preConfirm: async (url) => {
-      try {
-        const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'action=getData');
-        const rows = await res.json();
-        if (!Array.isArray(rows)) throw new Error('รูปแบบข้อมูลไม่ถูกต้อง');
-        return rows;
-      } catch (e) { Swal.showValidationMessage('ดึงข้อมูลไม่สำเร็จ: ' + e.message); return false; }
-    },
-  });
-  if (!r.isConfirmed) return;
-  const items = r.value
-    .filter((row) => Array.isArray(row) && row[1])
-    .map((row) => ({
-      court_name: row[1], meeting_date: legacyDate(row[2]), start_time: legacyTime(row[3]), end_time: legacyTime(row[4]),
-      black_case: row[5] || '-', red_case: row[6] || '', reason: row[7] || '-', contact_name: row[8] || '-',
-      phone: String(row[9] || '').replace(/^'/, '') || '-------', ip_address: String(row[10] || '').trim() || '0.0.0.0',
-    }));
-  const ok = await SwalTheme.fire({ icon: 'question', title: `พบข้อมูล ${items.length} รายการ`, text: 'ต้องการนำเข้าทั้งหมดหรือไม่?', showCancelButton: true, confirmButtonText: 'นำเข้า' });
-  if (!ok.isConfirmed) return;
-  SwalTheme.fire({ title: 'กำลังนำเข้า…', html: '<span id="impProg">0</span> / ' + items.length, allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-  const total = { inserted: 0, skipped: 0, failed: 0, errors: [] };
+/* --- Import history from the old Google Sheet (fetched by the server) --- */
+async function importLegacy({ ask = true } = {}) {
+  if (ask) {
+    const r = await SwalTheme.fire({
+      icon: 'question',
+      title: 'ดึงประวัติจาก Google Sheet',
+      html: '<p class="text-left">ระบบจะดึงข้อมูลการจองทั้งหมดจาก Google Sheet ของระบบเดิมมาบันทึกในฐานข้อมูลใหม่<br><span class="text-sm text-slate-500">รายการที่มีอยู่แล้ว (วันที่ เวลาเริ่ม ศาล และคดีดำเดียวกัน) จะถูกข้าม จึงกดซ้ำได้อย่างปลอดภัย</span></p>',
+      showCancelButton: true,
+      confirmButtonText: '<i class="fa-solid fa-cloud-arrow-down"></i> ดึงข้อมูล',
+    });
+    if (!r.isConfirmed) return;
+  }
+  SwalTheme.fire({ title: 'กำลังดึงประวัติจาก Google Sheet…', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
   try {
-    for (let i = 0; i < items.length; i += 100) {
-      const res = await api('/api/bookings?action=import', { method: 'POST', data: { items: items.slice(i, i + 100) } });
-      total.inserted += res.inserted; total.skipped += res.skipped; total.failed += res.failed;
-      total.errors.push(...res.errors.map((e) => ({ ...e, row: e.row + i })));
-      const p = document.getElementById('impProg'); if (p) p.textContent = Math.min(i + 100, items.length);
-    }
+    const res = await api('/api/bookings?action=import-legacy', { method: 'POST' });
     await SwalTheme.fire({
-      icon: total.failed ? 'warning' : 'success', title: 'นำเข้าเสร็จสิ้น',
-      html: `<div class="text-left">นำเข้าใหม่ <b>${total.inserted}</b> · ข้ามรายการซ้ำ <b>${total.skipped}</b> · ไม่สำเร็จ <b>${total.failed}</b>
-        ${total.errors.length ? `<ul class="mt-3 text-xs text-rose-600 max-h-40 overflow-auto list-disc pl-5">${total.errors.slice(0, 20).map((e) => `<li>แถว ${e.row}: ${esc(e.message)}</li>`).join('')}</ul>` : ''}</div>`,
+      icon: res.failed ? 'warning' : 'success',
+      title: 'ดึงประวัติเสร็จสิ้น',
+      html: `<div class="text-left space-y-1">
+        <div>พบข้อมูลใน Google Sheet <b>${res.total}</b> แถว</div>
+        <div>นำเข้าใหม่ <b class="text-emerald-600">${res.inserted}</b> · มีอยู่แล้ว/ซ้ำ <b>${res.skipped}</b> · ไม่สำเร็จ <b class="text-rose-600">${res.failed}</b></div>
+        ${res.errors.length ? `<ul class="mt-3 text-xs text-rose-600 max-h-40 overflow-auto list-disc pl-5">${res.errors.map((e) => `<li>แถว ${e.row}: ${esc(e.message)}</li>`).join('')}</ul>` : ''}
+        <p class="text-xs text-slate-500 pt-2">รายการที่นำเข้าจะมีป้าย "นำเข้า" และหากข้อมูลเดิมมีเวลาหรือ IP ผิดรูปแบบ ระบบจะบันทึกไว้ในหมายเหตุ</p></div>`,
     });
     loadBookings();
-  } catch (err) { if (!handleAuthError(err)) alertError(err, 'นำเข้าไม่สำเร็จ'); }
-});
+  } catch (err) {
+    if (!handleAuthError(err)) alertError(err, 'ดึงประวัติไม่สำเร็จ');
+  }
+}
+$('#importBtn').addEventListener('click', () => importLegacy());
 
 /* ---------------- Users ---------------- */
 const usersTable = createTable({
