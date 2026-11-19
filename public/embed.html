@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>ปฏิทินการจองห้องประชุมทางไกล | ศาลจังหวัดอุดรธานี</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/assets/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="/assets/app.css">
+  <style>
+    html, body { height: 100%; }
+    body { margin: 0; background: transparent; }
+    .fc .fc-toolbar.fc-header-toolbar { margin-bottom: .75rem; flex-wrap: wrap; gap: .5rem; }
+    .compact .fc .fc-toolbar-title { font-size: 1.05rem; }
+    .compact .fc .fc-button { padding: .3rem .6rem; font-size: .85rem; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <div id="wrap" class="h-full flex flex-col bg-white">
+    <header id="head" class="hidden shrink-0 bg-navy-900 text-white px-4 py-3 flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-white/10 ring-1 ring-white/20 grid place-items-center"><i class="fa-solid fa-scale-balanced text-gold-400"></i></div>
+      <div class="min-w-0 leading-tight">
+        <div id="headTitle" class="font-bold truncate">ปฏิทินการจองห้องประชุมทางไกล</div>
+        <div class="text-xs text-navy-200">ศาลจังหวัดอุดรธานี</div>
+      </div>
+      <a id="bookLink" href="/" target="_blank" rel="noopener" class="ml-auto shrink-0 rounded-lg bg-gold-500 hover:bg-gold-400 text-navy-950 text-sm font-semibold px-3 py-1.5 transition"><i class="fa-solid fa-calendar-plus mr-1"></i>จองห้อง</a>
+    </header>
+    <main class="flex-1 min-h-0 p-3 sm:p-6">
+      <div id="calendar" class="h-full"></div>
+    </main>
+    <footer id="foot" class="shrink-0 px-4 py-1.5 text-[11px] text-slate-400 flex justify-between border-t border-slate-100">
+      <span id="updated"></span>
+      <a href="/" target="_blank" rel="noopener" class="hover:text-navy-700">ระบบจองห้องประชุมทางไกล ศาลจังหวัดอุดรธานี</a>
+    </footer>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/th.global.min.js"></script>
+  <script src="/assets/common.js"></script>
+  <script>
+    /* Options (query string):
+       view=month|week|list   default month
+       header=1|0             show navy title bar (default 0 = calendar only, like the public page)
+       footer=1|0             show 'updated at' line (default 0)
+       title=...              custom title text
+       details=1|0            click an event to see details (default 1)
+       nav=1|0                show prev/next/today buttons (default 1)
+       compact=1|0            smaller toolbar (default 0)
+       refresh=<minutes>      auto-refresh, 0 = off (default 5) */
+    const qs = new URLSearchParams(location.search);
+    const opt = {
+      view: { month: 'dayGridMonth', week: 'timeGridWeek', list: 'listMonth' }[qs.get('view')] || 'dayGridMonth',
+      header: qs.get('header') === '1',
+      footer: qs.get('footer') === '1',
+      title: (qs.get('title') || '').slice(0, 120),
+      details: qs.get('details') !== '0',
+      nav: qs.get('nav') !== '0',
+      compact: qs.get('compact') === '1',
+      refresh: Math.max(0, Math.min(120, Number(qs.get('refresh') ?? 5) || 0)),
+    };
+
+    if (opt.header) document.getElementById('head').classList.remove('hidden');
+    if (!opt.footer) document.getElementById('foot').classList.add('hidden');
+    if (opt.title) document.getElementById('headTitle').textContent = opt.title;
+    if (opt.compact) document.body.classList.add('compact');
+
+    let bookings = [];
+    const toEvents = () => bookings.map((r) => ({
+      id: String(r.id),
+      title: `${r.court_name} (${r.black_case})`,
+      start: `${r.meeting_date}T${r.start_time}`,
+      end: r.end_time > r.start_time ? `${r.meeting_date}T${r.end_time}` : undefined,
+      extendedProps: r,
+    }));
+
+    const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+      locale: 'th',
+      initialView: opt.view,
+      headerToolbar: {
+        left: opt.nav ? 'prev,next today' : '',
+        center: 'title',
+        right: opt.compact ? '' : 'dayGridMonth,timeGridWeek,listMonth',
+      },
+      buttonText: { today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', list: 'รายการ' },
+      titleFormat: (arg) => `${TH_MONTHS[arg.date.month]} ${arg.date.year + 543}`,
+      height: '100%',
+      slotMinTime: '07:00:00', slotMaxTime: '19:00:00',
+      allDaySlot: false,
+      eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+      dayMaxEvents: 3,
+      noEventsText: 'ไม่มีการจองในช่วงนี้',
+      events: [],
+      eventClick: ({ event }) => {
+        if (!opt.details) return;
+        const r = event.extendedProps;
+        SwalTheme.fire({
+          title: esc(r.court_name),
+          html: `<div class="text-left space-y-2 text-[15px]">
+            <div><i class="fa-regular fa-calendar w-5 text-navy-500"></i> ${thaiDate(r.meeting_date, { weekday: true })}</div>
+            <div><i class="fa-regular fa-clock w-5 text-navy-500"></i> ${r.start_time}–${r.end_time} น.</div>
+            <div><i class="fa-solid fa-file-lines w-5 text-navy-500"></i> คดีดำ ${esc(r.black_case)}${r.red_case ? ` · คดีแดง <span class="text-rose-600">${esc(r.red_case)}</span>` : ''}</div>
+            <div><i class="fa-solid fa-comment w-5 text-navy-500"></i> ${esc(r.reason)}</div>
+            <div><i class="fa-solid fa-user w-5 text-navy-500"></i> ${esc(r.contact_name)}</div></div>`,
+        });
+      },
+    });
+    calendar.render();
+
+    async function load() {
+      try {
+        const { data } = await api('/api/bookings');
+        bookings = data;
+        calendar.removeAllEvents();
+        calendar.addEventSource(toEvents());
+        const now = new Date();
+        document.getElementById('updated').textContent = `อัปเดต ${now.toTimeString().slice(0, 5)} น.`;
+      } catch (err) {
+        document.getElementById('updated').textContent = 'โหลดข้อมูลไม่สำเร็จ';
+      }
+    }
+    load();
+    if (opt.refresh) setInterval(load, opt.refresh * 60 * 1000);
+  </script>
+</body>
+</html>

@@ -99,6 +99,7 @@
       <nav class="flex-1 px-3 py-5 space-y-1 text-[15px]">
         <a href="#dashboard" class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-gauge-high w-5 text-navy-300"></i> ภาพรวม</a>
         <a href="#bookings" class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-calendar-check w-5 text-navy-300"></i> รายการจอง</a>
+        <a href="#embed" class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-code w-5 text-navy-300"></i> ฝังปฏิทินในเว็บอื่น</a>
         <a href="#users" data-admin-only class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-users-gear w-5 text-navy-300"></i> ผู้ใช้งาน</a>
         <a href="#account" class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-user-lock w-5 text-navy-300"></i> บัญชีของฉัน</a>
         <div class="pt-4 mt-4 border-t border-white/10"></div>
@@ -185,6 +186,59 @@
               <button id="addUserBtn" class="rounded-xl px-4 py-2.5 text-sm font-semibold bg-navy-700 hover:bg-navy-800 text-white shadow-lg shadow-navy-700/20 transition"><i class="fa-solid fa-user-plus mr-1"></i> เพิ่มผู้ใช้งาน</button>
             </div>
             <div id="usersTable"></div>
+          </div>
+        </section>
+
+        <!-- Embed -->
+        <section id="view-embed" class="view hidden">
+          <div class="grid xl:grid-cols-5 gap-6">
+            <div class="xl:col-span-2 space-y-6">
+              <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-6 space-y-5">
+                <div>
+                  <h2 class="text-lg font-bold">ตั้งค่าปฏิทินสำหรับฝัง</h2>
+                  <p class="text-sm text-slate-500">ค่าเริ่มต้นจะแสดงเฉพาะส่วนปฏิทินแบบเดียวกับหน้าจอง คัดลอกโค้ด &lt;iframe&gt; ไปวางในเว็บไซต์อื่นได้เลย ปฏิทินแสดงเฉพาะข้อมูลสาธารณะ (ไม่มีเบอร์โทร/IP) และอัปเดตอัตโนมัติ</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                  <div><label class="label">มุมมองเริ่มต้น</label>
+                    <select id="eView" class="input"><option value="month">รายเดือน</option><option value="week">รายสัปดาห์</option><option value="list">รายการ</option></select></div>
+                  <div><label class="label">ความสูง (px)</label><input id="eHeight" type="number" min="300" max="2000" step="10" value="700" class="input"></div>
+                  <div><label class="label">ความกว้าง</label>
+                    <select id="eWidth" class="input"><option value="100%">เต็มพื้นที่ (100%)</option><option value="800">800 px</option><option value="600">600 px</option><option value="400">400 px</option></select></div>
+                  <div><label class="label">รีเฟรชข้อมูลทุก</label>
+                    <select id="eRefresh" class="input"><option value="5">5 นาที</option><option value="1">1 นาที</option><option value="15">15 นาที</option><option value="60">1 ชั่วโมง</option><option value="0">ไม่รีเฟรช</option></select></div>
+                  <div class="col-span-2"><label class="label">หัวข้อบนแถบสีน้ำเงิน (ไม่บังคับ)</label><input id="eTitle" class="input" placeholder="ปฏิทินการจองห้องประชุมทางไกล" maxlength="120"></div>
+                </div>
+                <div class="space-y-3">
+                  <label class="flex items-center gap-3 cursor-pointer"><input id="eHeader" type="checkbox" class="w-4 h-4 accent-navy-700"> <span>แสดงแถบหัวเรื่องสีน้ำเงินและปุ่ม "จองห้อง"</span></label>
+                  <label class="flex items-center gap-3 cursor-pointer"><input id="eFooter" type="checkbox" class="w-4 h-4 accent-navy-700"> <span>แสดงเวลาอัปเดตล่าสุดด้านล่าง</span></label>
+                  <label class="flex items-center gap-3 cursor-pointer"><input id="eNav" type="checkbox" checked class="w-4 h-4 accent-navy-700"> <span>แสดงปุ่มเลื่อนเดือน / วันนี้</span></label>
+                  <label class="flex items-center gap-3 cursor-pointer"><input id="eDetails" type="checkbox" checked class="w-4 h-4 accent-navy-700"> <span>คลิกรายการเพื่อดูรายละเอียด</span></label>
+                  <label class="flex items-center gap-3 cursor-pointer"><input id="eCompact" type="checkbox" class="w-4 h-4 accent-navy-700"> <span>โหมดกะทัดรัด (สำหรับพื้นที่แคบ)</span></label>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-6 space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                  <h3 class="font-bold">โค้ดสำหรับฝัง</h3>
+                  <button id="eCopy" class="rounded-xl px-4 py-2 text-sm font-semibold bg-navy-700 hover:bg-navy-800 text-white transition"><i class="fa-regular fa-copy mr-1"></i> คัดลอกโค้ด</button>
+                </div>
+                <textarea id="eCode" readonly rows="5" class="input font-mono text-xs !leading-relaxed bg-slate-50"></textarea>
+                <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                  <button id="eCopyUrl" class="text-navy-700 hover:underline"><i class="fa-solid fa-link mr-1"></i>คัดลอกเฉพาะลิงก์</button>
+                  <a id="eOpen" href="/embed" target="_blank" rel="noopener" class="text-navy-700 hover:underline"><i class="fa-solid fa-arrow-up-right-from-square mr-1"></i>เปิดในแท็บใหม่</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="xl:col-span-3 bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-4 sm:p-6">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold">ตัวอย่าง</h3>
+                <span id="eSizeLabel" class="text-xs text-slate-500"></span>
+              </div>
+              <div class="rounded-xl bg-slate-100 p-3 overflow-auto">
+                <iframe id="ePreview" title="ตัวอย่างปฏิทิน" class="block mx-auto bg-white rounded-lg shadow" style="border:0"></iframe>
+              </div>
+            </div>
           </div>
         </section>
 

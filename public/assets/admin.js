@@ -91,13 +91,14 @@ function enterApp(user) {
   if (user.role === 'admin') loadUsers();
 }
 
-const TITLES = { dashboard: 'ภาพรวม', bookings: 'รายการจอง', users: 'ผู้ใช้งาน', account: 'บัญชีของฉัน' };
+const TITLES = { dashboard: 'ภาพรวม', bookings: 'รายการจอง', embed: 'ฝังปฏิทินในเว็บอื่น', users: 'ผู้ใช้งาน', account: 'บัญชีของฉัน' };
 function route() {
   let view = location.hash.replace('#', '') || 'dashboard';
   if (!TITLES[view] || (view === 'users' && me?.role !== 'admin')) view = 'dashboard';
   $$('.view').forEach((v) => v.classList.toggle('hidden', v.id !== 'view-' + view));
   $$('.side-link').forEach((a) => { if (a.getAttribute('href') === '#' + view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   $('#pageTitle').textContent = TITLES[view];
+  if (view === 'embed') updateEmbed();
   closeSidebar();
 }
 window.addEventListener('hashchange', () => me && route());
@@ -446,6 +447,51 @@ async function deleteUser(u) {
     loadUsers();
   } catch (err) { if (!handleAuthError(err)) alertError(err, 'ลบไม่สำเร็จ'); }
 }
+
+/* ---------------- Embed calendar ---------------- */
+let embedTimer = null;
+function embedUrl() {
+  const p = new URLSearchParams();
+  p.set('view', $('#eView').value);
+  if ($('#eHeader').checked) p.set('header', '1');
+  if ($('#eFooter').checked) p.set('footer', '1');
+  if (!$('#eNav').checked) p.set('nav', '0');
+  if (!$('#eDetails').checked) p.set('details', '0');
+  if ($('#eCompact').checked) p.set('compact', '1');
+  if ($('#eRefresh').value !== '5') p.set('refresh', $('#eRefresh').value);
+  const title = $('#eTitle').value.trim();
+  if (title) p.set('title', title);
+  return `${location.origin}/embed?${p.toString()}`;
+}
+function updateEmbed() {
+  const url = embedUrl();
+  const h = Math.min(2000, Math.max(300, Number($('#eHeight').value) || 700));
+  const wv = $('#eWidth').value;
+  const w = wv === '100%' ? '100%' : `${wv}`;
+  $('#eCode').value =
+    `<iframe src="${url}"\n  width="${w}" height="${h}" style="border:0;border-radius:12px;max-width:100%"\n  title="ปฏิทินการจองห้องประชุมทางไกล ศาลจังหวัดอุดรธานี" loading="lazy"></iframe>`;
+  $('#eOpen').href = url;
+  $('#eSizeLabel').textContent = `${wv === '100%' ? 'กว้างเต็มพื้นที่' : wv + ' px'} × ${h} px`;
+  const frame = $('#ePreview');
+  frame.style.width = wv === '100%' ? '100%' : `${wv}px`;
+  frame.style.height = `${h}px`;
+  clearTimeout(embedTimer);
+  embedTimer = setTimeout(() => { if (frame.getAttribute('src') !== url) frame.src = url; }, 350);
+}
+['#eView', '#eHeight', '#eWidth', '#eRefresh', '#eTitle', '#eHeader', '#eFooter', '#eNav', '#eDetails', '#eCompact']
+  .forEach((id) => $(id).addEventListener(id === '#eTitle' || id === '#eHeight' ? 'input' : 'change', updateEmbed));
+
+async function copyText(text, label) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t); t.select();
+    document.execCommand('copy'); t.remove();
+  }
+  Toast.fire({ icon: 'success', title: label });
+}
+$('#eCopy').addEventListener('click', () => copyText($('#eCode').value, 'คัดลอกโค้ด iframe แล้ว'));
+$('#eCopyUrl').addEventListener('click', () => copyText(embedUrl(), 'คัดลอกลิงก์แล้ว'));
 
 /* ---------------- Account ---------------- */
 $('#pwForm').addEventListener('submit', async (e) => {
