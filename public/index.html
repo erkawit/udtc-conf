@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบจองห้องประชุมทางไกลผ่านจอภาพ | ศาลจังหวัดอุดรธานี</title>
+  <meta name="description" content="ระบบจองห้องประชุมทางไกลผ่านจอภาพ (Video Conference) ศาลจังหวัดอุดรธานี">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231f4473'/><text x='50' y='68' font-size='52' text-anchor='middle'>⚖️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/assets/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-navy-900 text-white">
+    <div class="h-1 bg-gradient-to-r from-gold-600 via-gold-400 to-gold-600"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+      <a href="/" class="flex items-center gap-3 min-w-0">
+        <div class="shrink-0 w-12 h-12 rounded-xl bg-white/10 ring-1 ring-white/20 grid place-items-center">
+          <i class="fa-solid fa-scale-balanced text-gold-400 text-xl"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="font-bold text-lg sm:text-xl leading-tight truncate">ระบบจองห้องประชุมทางไกลผ่านจอภาพ</div>
+          <div class="text-navy-200 text-sm">ศาลจังหวัดอุดรธานี</div>
+        </div>
+      </a>
+      <a href="/admin" class="shrink-0 inline-flex items-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 ring-1 ring-white/20 px-4 py-2.5 text-sm font-semibold transition">
+        <i class="fa-solid fa-lock text-gold-400"></i><span class="hidden sm:inline">เจ้าหน้าที่</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="bg-gradient-to-b from-navy-900 to-navy-800 text-white pb-20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 sm:pt-10">
+      <div class="grid lg:grid-cols-5 gap-8 items-end">
+        <div class="lg:col-span-3">
+          <p class="inline-flex items-center gap-2 text-gold-300 text-sm font-semibold tracking-wide"><i class="fa-solid fa-video"></i> VIDEO CONFERENCE BOOKING</p>
+          <h1 class="mt-2 text-3xl sm:text-4xl font-bold leading-snug">นัดประชุมผ่านจอภาพกับศาลจังหวัดอุดรธานี</h1>
+          <p class="mt-3 text-navy-100 text-base sm:text-lg max-w-2xl">กรอกแบบฟอร์มเพื่อจองช่วงเวลา ระบบจะตรวจสอบเวลาที่ทับซ้อนให้อัตโนมัติ และแสดงในตารางการจองทันที</p>
+        </div>
+        <div class="lg:col-span-2 grid grid-cols-3 gap-3">
+          <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
+            <div class="text-navy-200 text-xs sm:text-sm">วันนี้</div>
+            <div id="statToday" class="text-2xl sm:text-3xl font-bold mt-1">–</div>
+          </div>
+          <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
+            <div class="text-navy-200 text-xs sm:text-sm">7 วันข้างหน้า</div>
+            <div id="statWeek" class="text-2xl sm:text-3xl font-bold mt-1">–</div>
+          </div>
+          <div class="rounded-2xl bg-white/5 ring-1 ring-white/10 p-4">
+            <div class="text-navy-200 text-xs sm:text-sm">เดือนนี้</div>
+            <div id="statMonth" class="text-2xl sm:text-3xl font-bold mt-1">–</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main class="flex-1 -mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+      <!-- Tabs -->
+      <div role="tablist" class="grid grid-cols-3 sm:inline-flex gap-1 rounded-2xl bg-slate-200/70 p-1.5 shadow-card backdrop-blur">
+        <button role="tab" class="tab-btn rounded-xl px-2 sm:px-5 py-2.5 text-sm sm:text-base whitespace-nowrap font-semibold text-slate-600 transition" data-tab="form" aria-selected="true"><i class="fa-solid fa-calendar-plus mr-1.5 sm:mr-2"></i>จอง<span class="hidden sm:inline">ห้องประชุม</span></button>
+        <button role="tab" class="tab-btn rounded-xl px-2 sm:px-5 py-2.5 text-sm sm:text-base whitespace-nowrap font-semibold text-slate-600 transition" data-tab="list" aria-selected="false"><i class="fa-solid fa-list-ul mr-1.5 sm:mr-2"></i><span class="sm:hidden">ตาราง</span><span class="hidden sm:inline">ตารางการจอง</span></button>
+        <button role="tab" class="tab-btn rounded-xl px-2 sm:px-5 py-2.5 text-sm sm:text-base whitespace-nowrap font-semibold text-slate-600 transition" data-tab="calendar" aria-selected="false"><i class="fa-regular fa-calendar mr-1.5 sm:mr-2"></i>ปฏิทิน</button>
+      </div>
+
+      <!-- Booking form -->
+      <section id="tab-form" class="mt-5 grid lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60">
+          <div class="px-6 sm:px-8 py-5 border-b border-slate-100">
+            <h2 class="text-xl font-bold text-slate-800">แบบฟอร์มจองห้องประชุมทางไกล</h2>
+            <p class="text-sm text-slate-500 mt-1">ช่องที่มีเครื่องหมาย <span class="text-rose-600">*</span> จำเป็นต้องกรอก</p>
+          </div>
+          <form id="bookingForm" class="p-6 sm:p-8 space-y-7" novalidate>
+            <fieldset>
+              <legend class="flex items-center gap-2 text-sm font-bold text-navy-700 mb-4"><span class="w-6 h-6 rounded-full bg-navy-50 grid place-items-center text-xs">1</span> วันและเวลา</legend>
+              <div class="grid sm:grid-cols-3 gap-4">
+                <div>
+                  <label class="label" for="meeting_date">วันที่นัดประชุม<span class="req">*</span></label>
+                  <input id="meeting_date" name="meeting_date" class="input" placeholder="เลือกวันที่" required>
+                </div>
+                <div>
+                  <label class="label" for="start_time">เวลาเริ่ม<span class="req">*</span></label>
+                  <input type="time" id="start_time" name="start_time" class="input" required>
+                </div>
+                <div>
+                  <label class="label" for="end_time">เวลาสิ้นสุด<span class="req">*</span></label>
+                  <input type="time" id="end_time" name="end_time" class="input" required>
+                </div>
+              </div>
+              <div id="dayHint" class="hidden mt-3 rounded-xl bg-navy-50 text-navy-800 text-sm px-4 py-3"></div>
+            </fieldset>
+
+            <fieldset>
+              <legend class="flex items-center gap-2 text-sm font-bold text-navy-700 mb-4"><span class="w-6 h-6 rounded-full bg-navy-50 grid place-items-center text-xs">2</span> ข้อมูลคดี</legend>
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div class="sm:col-span-2">
+                  <label class="label" for="court_name">ชื่อศาลที่ขอนัดประชุมผ่านจอภาพ<span class="req">*</span></label>
+                  <input id="court_name" name="court_name" class="input" placeholder="เช่น ศาลจังหวัดขอนแก่น" required maxlength="200">
+                </div>
+                <div>
+                  <label class="label" for="black_case">หมายเลขคดีดำ<span class="req">*</span></label>
+                  <input id="black_case" name="black_case" class="input" placeholder="เช่น อ.123/2568" required maxlength="100">
+                </div>
+                <div>
+                  <label class="label" for="red_case">หมายเลขคดีแดง</label>
+                  <input id="red_case" name="red_case" class="input" placeholder="ถ้ามี" maxlength="100">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="label" for="reason">เหตุที่นัด<span class="req">*</span></label>
+                  <textarea id="reason" name="reason" rows="3" class="input" placeholder="เช่น สืบพยานโจทก์ / ฟังคำพิพากษา" required maxlength="1000"></textarea>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset>
+              <legend class="flex items-center gap-2 text-sm font-bold text-navy-700 mb-4"><span class="w-6 h-6 rounded-full bg-navy-50 grid place-items-center text-xs">3</span> ผู้ติดต่อและการเชื่อมต่อ</legend>
+              <div class="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="label" for="contact_name">ชื่อผู้ติดต่อ / ส่วนงาน<span class="req">*</span></label>
+                  <input id="contact_name" name="contact_name" class="input" required maxlength="200">
+                </div>
+                <div>
+                  <label class="label" for="phone">เบอร์โทรศัพท์<span class="req">*</span></label>
+                  <input type="tel" id="phone" name="phone" class="input" placeholder="เช่น 042-123456" required maxlength="50">
+                </div>
+                <div class="sm:col-span-2">
+                  <label class="label" for="ip_address">หมายเลข IP Address ของศาลที่ขอประชุม<span class="req">*</span></label>
+                  <input id="ip_address" name="ip_address" class="input font-mono" placeholder="เช่น 192.168.1.10" inputmode="decimal" required maxlength="15">
+                </div>
+              </div>
+            </fieldset>
+
+            <div class="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end pt-2">
+              <button type="reset" class="rounded-xl px-6 py-3 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">ล้างข้อมูล</button>
+              <button type="submit" id="submitBtn" class="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-semibold text-white bg-navy-700 hover:bg-navy-800 shadow-lg shadow-navy-700/20 transition">
+                <i class="fa-solid fa-paper-plane"></i> ส่งคำขอจอง
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <aside class="space-y-6">
+          <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-6">
+            <h3 class="font-bold text-slate-800 flex items-center gap-2"><i class="fa-solid fa-calendar-day text-gold-500"></i> การจองที่กำลังจะถึง</h3>
+            <ul id="upcomingList" class="mt-4 divide-y divide-slate-100">
+              <li class="py-6 text-center text-slate-400 text-sm">กำลังโหลด…</li>
+            </ul>
+            <button data-goto="list" class="mt-4 w-full rounded-xl border border-slate-200 py-2.5 text-sm font-semibold text-navy-700 hover:bg-navy-50 transition">ดูตารางทั้งหมด</button>
+          </div>
+          <div class="rounded-2xl bg-gold-50 ring-1 ring-gold-100 p-6 text-sm text-slate-700">
+            <h3 class="font-bold text-gold-700 flex items-center gap-2"><i class="fa-solid fa-circle-info"></i> ข้อแนะนำ</h3>
+            <ul class="mt-3 space-y-2 list-disc pl-5">
+              <li>โปรดตรวจสอบตารางการจองก่อน เพื่อเลี่ยงช่วงเวลาที่ซ้ำกัน</li>
+              <li>ระบุ IP Address ของอุปกรณ์ประชุมของศาลปลายทางให้ถูกต้อง</li>
+              <li>หากต้องการแก้ไขหรือยกเลิกการจอง กรุณาติดต่อเจ้าหน้าที่ศาลจังหวัดอุดรธานี</li>
+            </ul>
+          </div>
+        </aside>
+      </section>
+
+      <!-- List -->
+      <section id="tab-list" class="hidden mt-5 bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-6 sm:p-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+          <div>
+            <h2 class="text-xl font-bold text-slate-800">ตารางการจองห้องประชุม</h2>
+            <p class="text-sm text-slate-500">ข้อมูลอัปเดตทันทีเมื่อมีการจอง</p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <div class="inline-flex rounded-xl bg-slate-100 p-1" id="rangeFilter">
+              <button data-range="upcoming" class="range-btn rounded-lg px-4 py-2 text-sm font-semibold bg-white text-navy-700 shadow-sm">กำลังจะถึง</button>
+              <button data-range="past" class="range-btn rounded-lg px-4 py-2 text-sm font-semibold text-slate-500">ที่ผ่านมา</button>
+              <button data-range="all" class="range-btn rounded-lg px-4 py-2 text-sm font-semibold text-slate-500">ทั้งหมด</button>
+            </div>
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+              <input id="search" class="input !pl-10 sm:w-72" placeholder="ค้นหาศาล, เลขคดี, ผู้ติดต่อ">
+            </div>
+          </div>
+        </div>
+        <div id="publicTable"></div>
+      </section>
+
+      <!-- Calendar -->
+      <section id="tab-calendar" class="hidden mt-5 bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-4 sm:p-8">
+        <div id="calendar"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="mt-14 border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-sm text-slate-500 flex flex-col sm:flex-row justify-between gap-2">
+      <div>© <span id="year"></span> ศาลจังหวัดอุดรธานี</div>
+      <div>ระบบจองห้องประชุมทางไกลผ่านจอภาพ</div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/th.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/th.global.min.js"></script>
+  <script src="/assets/common.js"></script>
+  <script>
+    let bookings = [];
+    let range = 'upcoming';
+    let calendar = null;
+    document.getElementById('year').textContent = new Date().getFullYear() + 543;
+
+    /* ---------- Tabs ---------- */
+    function showTab(name) {
+      document.querySelectorAll('.tab-btn').forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === name));
+      ['form', 'list', 'calendar'].forEach((t) => document.getElementById('tab-' + t).classList.toggle('hidden', t !== name));
+      if (name === 'calendar') renderCalendar();
+      history.replaceState(null, '', name === 'form' ? '/' : '#' + name);
+    }
+    document.querySelectorAll('.tab-btn').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+    document.querySelectorAll('[data-goto]').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.goto)));
+
+    /* ---------- Table ---------- */
+    const table = createTable({
+      el: '#publicTable',
+      columns: [
+        { title: 'วันที่ / เวลา', render: (r) => `<div class="font-semibold text-slate-800 whitespace-nowrap">${thaiDate(r.meeting_date, { short: true })}</div><div class="text-navy-600 text-sm whitespace-nowrap"><i class="fa-regular fa-clock mr-1"></i>${r.start_time}–${r.end_time} น.</div>` },
+        { title: 'ศาลที่ขอประชุม', render: (r) => `<div class="font-medium">${esc(r.court_name)}</div>` },
+        { title: 'คดีดำ / คดีแดง', render: (r) => `<div class="whitespace-nowrap">${esc(r.black_case)}</div>${r.red_case ? `<div class="text-rose-600 whitespace-nowrap">${esc(r.red_case)}</div>` : ''}` },
+        { title: 'เหตุที่นัด', tdClass: 'max-w-xs', render: (r) => esc(r.reason) },
+        { title: 'ผู้ติดต่อ', render: (r) => esc(r.contact_name) },
+        { title: 'สถานะ', render: (r) => statusBadge(r.status) },
+      ],
+      rowClass: (r) => (r.meeting_date === todayYMD() ? 'bg-gold-50/60' : ''),
+      empty: 'ไม่พบรายการจอง',
+    });
+
+    function applyFilter() {
+      const term = document.getElementById('search').value.trim().toLowerCase();
+      const today = todayYMD();
+      let rows = bookings.filter((r) =>
+        range === 'all' ? true : range === 'upcoming' ? r.meeting_date >= today : r.meeting_date < today);
+      if (range === 'upcoming') rows = [...rows].sort((a, b) => (a.meeting_date + a.start_time).localeCompare(b.meeting_date + b.start_time));
+      if (term) rows = rows.filter((r) => [r.court_name, r.black_case, r.red_case, r.reason, r.contact_name, thaiDate(r.meeting_date)].join(' ').toLowerCase().includes(term));
+      table.setRows(rows);
+    }
+    document.getElementById('search').addEventListener('input', debounce(applyFilter));
+    document.querySelectorAll('.range-btn').forEach((b) => b.addEventListener('click', () => {
+      range = b.dataset.range;
+      document.querySelectorAll('.range-btn').forEach((x) => {
+        const on = x === b;
+        x.classList.toggle('bg-white', on); x.classList.toggle('text-navy-700', on); x.classList.toggle('shadow-sm', on);
+        x.classList.toggle('text-slate-500', !on);
+      });
+      applyFilter();
+    }));
+
+    /* ---------- Stats + upcoming ---------- */
+    function renderSummary() {
+      const today = todayYMD();
+      const in7 = new Date(); in7.setDate(in7.getDate() + 7);
+      const week = toYMD(in7);
+      const month = today.slice(0, 7);
+      document.getElementById('statToday').textContent = bookings.filter((r) => r.meeting_date === today).length;
+      document.getElementById('statWeek').textContent = bookings.filter((r) => r.meeting_date >= today && r.meeting_date <= week).length;
+      document.getElementById('statMonth').textContent = bookings.filter((r) => r.meeting_date.startsWith(month)).length;
+
+      const nowHM = new Date().toTimeString().slice(0, 5);
+      const upcoming = bookings
+        .filter((r) => r.meeting_date > today || (r.meeting_date === today && r.end_time >= nowHM))
+        .sort((a, b) => (a.meeting_date + a.start_time).localeCompare(b.meeting_date + b.start_time))
+        .slice(0, 5);
+      document.getElementById('upcomingList').innerHTML = upcoming.length
+        ? upcoming.map((r) => {
+            const d = parseYMD(r.meeting_date);
+            return `<li class="py-3 flex gap-3">
+              <div class="shrink-0 w-14 rounded-xl ${r.meeting_date === today ? 'bg-gold-500 text-white' : 'bg-navy-50 text-navy-800'} text-center py-1.5">
+                <div class="text-[11px] leading-none">${TH_MONTHS_SHORT[d.getMonth()]}</div>
+                <div class="text-xl font-bold leading-tight">${d.getDate()}</div>
+              </div>
+              <div class="min-w-0">
+                <div class="font-semibold text-slate-800 truncate">${esc(r.court_name)}</div>
+                <div class="text-sm text-slate-500">${r.start_time}–${r.end_time} น. · ${esc(r.black_case)}</div>
+              </div></li>`;
+          }).join('')
+        : '<li class="py-6 text-center text-slate-400 text-sm">ยังไม่มีการจองที่กำลังจะถึง</li>';
+    }
+
+    /* ---------- Calendar ---------- */
+    function calendarEvents() {
+      return bookings.map((r) => ({
+        id: String(r.id),
+        title: `${r.court_name} (${r.black_case})`,
+        start: `${r.meeting_date}T${r.start_time}`,
+        end: `${r.meeting_date}T${r.end_time}`,
+        extendedProps: r,
+      }));
+    }
+    function renderCalendar() {
+      if (calendar) { calendar.removeAllEvents(); calendar.addEventSource(calendarEvents()); calendar.updateSize(); return; }
+      calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
+        locale: 'th',
+        initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listMonth' },
+        buttonText: { today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', list: 'รายการ' },
+        titleFormat: (arg) => `${TH_MONTHS[arg.date.month]} ${arg.date.year + 543}`,
+        height: 'auto',
+        slotMinTime: '07:00:00', slotMaxTime: '19:00:00',
+        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+        dayMaxEvents: 3,
+        events: calendarEvents(),
+        eventClick: ({ event }) => {
+          const r = event.extendedProps;
+          SwalTheme.fire({
+            title: esc(r.court_name),
+            html: `<div class="text-left space-y-2 text-[15px]">
+              <div><i class="fa-regular fa-calendar w-5 text-navy-500"></i> ${thaiDate(r.meeting_date, { weekday: true })}</div>
+              <div><i class="fa-regular fa-clock w-5 text-navy-500"></i> ${r.start_time}–${r.end_time} น.</div>
+              <div><i class="fa-solid fa-file-lines w-5 text-navy-500"></i> คดีดำ ${esc(r.black_case)}${r.red_case ? ` · คดีแดง <span class="text-rose-600">${esc(r.red_case)}</span>` : ''}</div>
+              <div><i class="fa-solid fa-comment w-5 text-navy-500"></i> ${esc(r.reason)}</div>
+              <div><i class="fa-solid fa-user w-5 text-navy-500"></i> ${esc(r.contact_name)}</div></div>`,
+          });
+        },
+      });
+      calendar.render();
+    }
+
+    /* ---------- Load ---------- */
+    async function load() {
+      try {
+        const { data } = await api('/api/bookings');
+        bookings = data;
+        renderSummary();
+        applyFilter();
+        if (calendar) renderCalendar();
+      } catch (err) {
+        document.getElementById('upcomingList').innerHTML = `<li class="py-6 text-center text-rose-500 text-sm">${esc(err.message)}</li>`;
+        table.setRows([]);
+      }
+    }
+
+    /* ---------- Form ---------- */
+    const form = document.getElementById('bookingForm');
+    const datePicker = thaiDatePicker('#meeting_date', {
+      minDate: 'today',
+      onChange: () => updateDayHint(),
+    });
+
+    function updateDayHint() {
+      const ymd = form.meeting_date.value;
+      const hint = document.getElementById('dayHint');
+      if (!ymd) return hint.classList.add('hidden');
+      const sameDay = bookings.filter((r) => r.meeting_date === ymd).sort((a, b) => a.start_time.localeCompare(b.start_time));
+      hint.classList.remove('hidden');
+      hint.innerHTML = sameDay.length
+        ? `<i class="fa-solid fa-circle-info mr-1"></i> ${thaiDate(ymd, { weekday: true })} มีการจองแล้ว: ` +
+          sameDay.map((r) => `<b>${r.start_time}–${r.end_time}</b>`).join(', ')
+        : `<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> ${thaiDate(ymd, { weekday: true })} ยังไม่มีการจอง`;
+    }
+
+    form.addEventListener('reset', () => {
+      setTimeout(() => { datePicker.clear(); document.getElementById('dayHint').classList.add('hidden'); form.querySelectorAll('.is-invalid').forEach((x) => x.classList.remove('is-invalid')); });
+    });
+    form.addEventListener('input', (e) => e.target.classList.remove('is-invalid'));
+
+    function collect() {
+      const fields = ['meeting_date', 'start_time', 'end_time', 'court_name', 'black_case', 'red_case', 'reason', 'contact_name', 'phone', 'ip_address'];
+      const data = Object.fromEntries(fields.map((f) => [f, form[f].value.trim()]));
+      const invalid = [];
+      fields.forEach((f) => {
+        if (form[f].required && !data[f]) invalid.push(f);
+      });
+      if (data.ip_address && !/^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/.test(data.ip_address)) invalid.push('ip_address');
+      if (data.start_time && data.end_time && data.end_time <= data.start_time) invalid.push('end_time');
+      fields.forEach((f) => {
+        const el = f === 'meeting_date' ? datePicker.altInput : form[f];
+        el.classList.toggle('is-invalid', invalid.includes(f));
+      });
+      return { data, invalid };
+    }
+
+    async function submitBooking(data, force = false) {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      SwalTheme.fire({ title: 'กำลังบันทึก…', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+        await api('/api/bookings', { method: 'POST', data: { ...data, force } });
+        await SwalTheme.fire({
+          icon: 'success',
+          title: 'จองสำเร็จ',
+          html: `<div class="text-left bg-slate-50 rounded-xl p-4 text-[15px] space-y-1">
+            <div><b>${esc(data.court_name)}</b></div>
+            <div>${thaiDate(data.meeting_date, { weekday: true })}</div>
+            <div>เวลา ${data.start_time}–${data.end_time} น.</div>
+            <div>คดีดำ ${esc(data.black_case)}</div></div>`,
+        });
+        form.reset();
+        await load();
+        showTab('list');
+      } catch (err) {
+        Swal.close();
+        if (err.status === 409 && await confirmConflict(err)) return submitBooking(data, true);
+        if (err.status !== 409) alertError(err, 'บันทึกไม่สำเร็จ');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const { data, invalid } = collect();
+      if (invalid.length) {
+        const msgs = [];
+        if (invalid.includes('ip_address') && data.ip_address) msgs.push('รูปแบบ IP Address ไม่ถูกต้อง');
+        if (invalid.includes('end_time') && data.end_time) msgs.push('เวลาสิ้นสุดต้องหลังเวลาเริ่ม');
+        return SwalTheme.fire({ icon: 'warning', title: 'กรุณาตรวจสอบข้อมูล', text: msgs.join(' · ') || 'กรอกข้อมูลในช่องที่มีกรอบสีแดงให้ครบ' });
+      }
+      const ok = await SwalTheme.fire({
+        icon: 'question',
+        title: 'ยืนยันการจอง',
+        html: `<div class="text-left bg-slate-50 rounded-xl p-4 text-[15px] space-y-1">
+          <div><b>${esc(data.court_name)}</b></div>
+          <div>${thaiDate(data.meeting_date, { weekday: true })} เวลา ${data.start_time}–${data.end_time} น.</div>
+          <div>คดีดำ ${esc(data.black_case)}${data.red_case ? ' / คดีแดง ' + esc(data.red_case) : ''}</div>
+          <div>IP ${esc(data.ip_address)}</div></div>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-solid fa-check"></i> ยืนยัน',
+      });
+      if (ok.isConfirmed) submitBooking(data);
+    });
+
+    /* ---------- Init ---------- */
+    const initial = location.hash.replace('#', '');
+    if (['list', 'calendar'].includes(initial)) showTab(initial);
+    load();
+  </script>
+</body>
+</html>

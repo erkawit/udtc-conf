@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>ระบบหลังบ้าน | จองห้องประชุมทางไกล ศาลจังหวัดอุดรธานี</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%231f4473'/><text x='50' y='68' font-size='52' text-anchor='middle'>⚖️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/assets/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+  <!-- ================= Boot loader ================= -->
+  <div id="boot" class="fixed inset-0 grid place-items-center bg-slate-100 z-50">
+    <div class="flex items-center gap-3 text-slate-500"><span class="w-5 h-5 border-2 border-navy-600 border-t-transparent rounded-full animate-spin"></span> กำลังโหลด…</div>
+  </div>
+
+  <!-- ================= Auth screen (login / first-time setup) ================= -->
+  <div id="authScreen" class="hidden min-h-screen grid lg:grid-cols-2">
+    <div class="hidden lg:flex flex-col justify-between bg-navy-900 text-white p-12 relative overflow-hidden">
+      <div class="absolute -right-24 -top-24 w-96 h-96 rounded-full bg-navy-800/60"></div>
+      <div class="absolute -left-20 bottom-10 w-72 h-72 rounded-full bg-navy-800/40"></div>
+      <div class="relative flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-white/10 ring-1 ring-white/20 grid place-items-center"><i class="fa-solid fa-scale-balanced text-gold-400 text-xl"></i></div>
+        <div><div class="font-bold text-lg">ศาลจังหวัดอุดรธานี</div><div class="text-navy-200 text-sm">Udon Thani Provincial Court</div></div>
+      </div>
+      <div class="relative">
+        <h1 class="text-4xl font-bold leading-snug">ระบบบริหารจัดการ<br>การจองห้องประชุมทางไกล</h1>
+        <p class="mt-4 text-navy-100 text-lg max-w-md">จัดการรายการจอง ตรวจสอบตารางเวลา พิมพ์รายงาน และบริหารผู้ใช้งาน ในที่เดียว</p>
+      </div>
+      <div class="relative text-navy-300 text-sm">สำหรับเจ้าหน้าที่ที่ได้รับอนุญาตเท่านั้น</div>
+    </div>
+
+    <div class="flex items-center justify-center p-6 sm:p-12">
+      <div class="w-full max-w-md">
+        <div class="lg:hidden flex items-center gap-3 mb-8">
+          <div class="w-11 h-11 rounded-xl bg-navy-800 grid place-items-center"><i class="fa-solid fa-scale-balanced text-gold-400"></i></div>
+          <div><div class="font-bold">ศาลจังหวัดอุดรธานี</div><div class="text-slate-500 text-sm">ระบบหลังบ้าน</div></div>
+        </div>
+
+        <!-- Login -->
+        <form id="loginForm" class="hidden bg-white rounded-2xl shadow-card ring-1 ring-slate-200/70 p-8 space-y-5">
+          <div>
+            <h2 class="text-2xl font-bold text-slate-800">เข้าสู่ระบบ</h2>
+            <p class="text-slate-500 mt-1">กรอกชื่อผู้ใช้และรหัสผ่านของท่าน</p>
+          </div>
+          <div>
+            <label class="label" for="loginUsername">ชื่อผู้ใช้</label>
+            <div class="relative"><i class="fa-regular fa-user absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input id="loginUsername" class="input !pl-10" autocomplete="username" required autofocus></div>
+          </div>
+          <div>
+            <label class="label" for="loginPassword">รหัสผ่าน</label>
+            <div class="relative"><i class="fa-solid fa-key absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input id="loginPassword" type="password" class="input !pl-10 !pr-11" autocomplete="current-password" required>
+              <button type="button" data-toggle-pw="loginPassword" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 text-slate-400 hover:text-slate-600"><i class="fa-regular fa-eye"></i></button></div>
+          </div>
+          <button class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-navy-700 hover:bg-navy-800 text-white font-semibold py-3 shadow-lg shadow-navy-700/20 transition"><i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ</button>
+          <a href="/" class="block text-center text-sm text-slate-500 hover:text-navy-700"><i class="fa-solid fa-arrow-left mr-1"></i> กลับหน้าจองห้องประชุม</a>
+        </form>
+
+        <!-- First-time setup -->
+        <form id="setupForm" class="hidden bg-white rounded-2xl shadow-card ring-1 ring-slate-200/70 p-8 space-y-5">
+          <div>
+            <span class="inline-flex items-center gap-1.5 rounded-full bg-gold-50 text-gold-700 text-xs font-semibold px-3 py-1 ring-1 ring-gold-100"><i class="fa-solid fa-wand-magic-sparkles"></i> ตั้งค่าครั้งแรก</span>
+            <h2 class="text-2xl font-bold text-slate-800 mt-3">สร้างบัญชีผู้ดูแลระบบ</h2>
+            <p class="text-slate-500 mt-1">ยังไม่มีผู้ใช้งานในระบบ กรุณาสร้างบัญชีผู้ดูแลคนแรก</p>
+          </div>
+          <div><label class="label" for="setupName">ชื่อ-สกุล<span class="req">*</span></label><input id="setupName" class="input" required></div>
+          <div><label class="label" for="setupUsername">ชื่อผู้ใช้<span class="req">*</span></label><input id="setupUsername" class="input" autocomplete="username" required><p class="hint">a-z, 0-9, จุด, ขีด ความยาว 3-32 ตัว</p></div>
+          <div><label class="label" for="setupPassword">รหัสผ่าน<span class="req">*</span></label><input id="setupPassword" type="password" class="input" autocomplete="new-password" required><p class="hint">อย่างน้อย 8 ตัวอักษร</p></div>
+          <div><label class="label" for="setupPassword2">ยืนยันรหัสผ่าน<span class="req">*</span></label><input id="setupPassword2" type="password" class="input" autocomplete="new-password" required></div>
+          <button class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-navy-700 hover:bg-navy-800 text-white font-semibold py-3 transition"><i class="fa-solid fa-user-shield"></i> สร้างบัญชีและเข้าสู่ระบบ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= App ================= -->
+  <div id="app" class="hidden min-h-screen lg:flex">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-72 -translate-x-full lg:translate-x-0 lg:static transition-transform bg-navy-900 text-navy-100 flex flex-col">
+      <div class="h-1 bg-gradient-to-r from-gold-600 via-gold-400 to-gold-600"></div>
+      <div class="px-6 py-5 flex items-center gap-3 border-b border-white/10">
+        <div class="w-11 h-11 rounded-xl bg-white/10 ring-1 ring-white/20 grid place-items-center"><i class="fa-solid fa-scale-balanced text-gold-400"></i></div>
+        <div class="leading-tight"><div class="font-bold text-white">ระบบหลังบ้าน</div><div class="text-xs text-navy-300">จองห้องประชุมทางไกล</div></div>
+      </div>
+      <nav class="flex-1 px-3 py-5 space-y-1 text-[15px]">
+        <a href="#dashboard" class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-gauge-high w-5 text-navy-300"></i> ภาพรวม</a>
+        <a href="#bookings" class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-calendar-check w-5 text-navy-300"></i> รายการจอง</a>
+        <a href="#users" data-admin-only class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-users-gear w-5 text-navy-300"></i> ผู้ใช้งาน</a>
+        <a href="#account" class="side-link flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-user-lock w-5 text-navy-300"></i> บัญชีของฉัน</a>
+        <div class="pt-4 mt-4 border-t border-white/10"></div>
+        <a href="/" target="_blank" class="flex items-center gap-3 rounded-xl px-4 py-2.5 hover:bg-white/5 transition"><i class="fa-solid fa-arrow-up-right-from-square w-5 text-navy-300"></i> หน้าจองสำหรับผู้ใช้</a>
+      </nav>
+      <div class="p-4 border-t border-white/10">
+        <div class="flex items-center gap-3 px-2">
+          <div id="meAvatar" class="w-10 h-10 rounded-full bg-gold-500 text-navy-950 font-bold grid place-items-center">?</div>
+          <div class="min-w-0 flex-1"><div id="meName" class="font-semibold text-white truncate">-</div><div id="meRole" class="text-xs text-navy-300">-</div></div>
+          <button id="logoutBtn" title="ออกจากระบบ" class="w-9 h-9 rounded-lg hover:bg-white/10 text-navy-200"><i class="fa-solid fa-right-from-bracket"></i></button>
+        </div>
+      </div>
+    </aside>
+    <div id="sidebarBackdrop" class="hidden fixed inset-0 z-30 bg-slate-900/40 lg:hidden"></div>
+
+    <div class="flex-1 min-w-0 flex flex-col">
+      <!-- Topbar -->
+      <header class="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200">
+        <div class="px-4 sm:px-8 h-16 flex items-center gap-4">
+          <button id="menuBtn" class="lg:hidden w-10 h-10 rounded-lg hover:bg-slate-100"><i class="fa-solid fa-bars"></i></button>
+          <h1 id="pageTitle" class="text-lg sm:text-xl font-bold text-slate-800">ภาพรวม</h1>
+          <div class="ml-auto text-sm text-slate-500 hidden sm:block" id="todayLabel"></div>
+        </div>
+      </header>
+
+      <main class="p-4 sm:p-8 space-y-6">
+        <!-- Dashboard -->
+        <section id="view-dashboard" class="view space-y-6">
+          <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-5"><div class="flex items-center justify-between"><span class="text-sm text-slate-500">วันนี้</span><span class="w-9 h-9 rounded-xl bg-gold-50 text-gold-600 grid place-items-center"><i class="fa-solid fa-sun"></i></span></div><div id="dToday" class="text-3xl font-bold mt-2">0</div></div>
+            <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-5"><div class="flex items-center justify-between"><span class="text-sm text-slate-500">7 วันข้างหน้า</span><span class="w-9 h-9 rounded-xl bg-navy-50 text-navy-600 grid place-items-center"><i class="fa-solid fa-calendar-week"></i></span></div><div id="dWeek" class="text-3xl font-bold mt-2">0</div></div>
+            <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-5"><div class="flex items-center justify-between"><span class="text-sm text-slate-500">เดือนนี้</span><span class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 grid place-items-center"><i class="fa-solid fa-calendar"></i></span></div><div id="dMonth" class="text-3xl font-bold mt-2">0</div></div>
+            <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-5"><div class="flex items-center justify-between"><span class="text-sm text-slate-500">ทั้งหมดในระบบ</span><span class="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 grid place-items-center"><i class="fa-solid fa-database"></i></span></div><div id="dAll" class="text-3xl font-bold mt-2">0</div></div>
+          </div>
+          <div class="grid xl:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60">
+              <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between"><h3 class="font-bold">ตารางวันนี้</h3><span id="dTodayLabel" class="text-sm text-slate-500"></span></div>
+              <ul id="dTodayList" class="divide-y divide-slate-100"></ul>
+            </div>
+            <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60">
+              <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between"><h3 class="font-bold">รายการจองล่าสุด</h3><a href="#bookings" class="text-sm font-semibold text-navy-700 hover:underline">ดูทั้งหมด</a></div>
+              <ul id="dRecentList" class="divide-y divide-slate-100"></ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bookings -->
+        <section id="view-bookings" class="view hidden space-y-4">
+          <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-5 sm:p-6">
+            <div class="flex flex-col xl:flex-row xl:items-end gap-4">
+              <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 flex-1">
+                <div class="lg:col-span-1"><label class="label">ค้นหา</label>
+                  <div class="relative"><i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i><input id="fSearch" class="input !pl-10" placeholder="ศาล, เลขคดี, ผู้ติดต่อ, IP"></div></div>
+                <div><label class="label">สถานะ</label>
+                  <select id="fStatus" class="input"><option value="">ทั้งหมด</option><option value="confirmed">ยืนยันแล้ว</option><option value="pending">รอตรวจสอบ</option><option value="cancelled">ยกเลิก</option></select></div>
+                <div><label class="label">ตั้งแต่วันที่</label><input id="fFrom" class="input" placeholder="ไม่กำหนด"></div>
+                <div><label class="label">ถึงวันที่</label><input id="fTo" class="input" placeholder="ไม่กำหนด"></div>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button id="fClear" class="rounded-xl px-4 py-2.5 text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-600 transition"><i class="fa-solid fa-eraser mr-1"></i> ล้าง</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-5 sm:p-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+              <div><h2 class="text-lg font-bold">รายการจองทั้งหมด</h2><p id="bCount" class="text-sm text-slate-500"></p></div>
+              <div class="flex flex-wrap gap-2">
+                <button id="importBtn" data-admin-only class="rounded-xl px-4 py-2.5 text-sm font-semibold border border-slate-200 hover:bg-slate-50 text-slate-600 transition"><i class="fa-solid fa-file-import mr-1"></i> นำเข้าจากระบบเดิม</button>
+                <button id="csvBtn" class="rounded-xl px-4 py-2.5 text-sm font-semibold border border-slate-200 hover:bg-slate-50 text-slate-600 transition"><i class="fa-solid fa-file-csv mr-1 text-emerald-600"></i> Excel (CSV)</button>
+                <button id="printBtn" class="rounded-xl px-4 py-2.5 text-sm font-semibold border border-slate-200 hover:bg-slate-50 text-slate-600 transition"><i class="fa-solid fa-print mr-1 text-rose-600"></i> พิมพ์รายงาน / PDF</button>
+                <button id="addBookingBtn" class="rounded-xl px-4 py-2.5 text-sm font-semibold bg-navy-700 hover:bg-navy-800 text-white shadow-lg shadow-navy-700/20 transition"><i class="fa-solid fa-plus mr-1"></i> เพิ่มการจอง</button>
+              </div>
+            </div>
+            <div id="bookingsTable"></div>
+          </div>
+        </section>
+
+        <!-- Users -->
+        <section id="view-users" class="view hidden">
+          <div class="bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-5 sm:p-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div><h2 class="text-lg font-bold">ผู้ใช้งานระบบ</h2><p class="text-sm text-slate-500">ผู้ดูแลระบบจัดการได้ทุกอย่าง · เจ้าหน้าที่จัดการได้เฉพาะรายการจอง</p></div>
+              <button id="addUserBtn" class="rounded-xl px-4 py-2.5 text-sm font-semibold bg-navy-700 hover:bg-navy-800 text-white shadow-lg shadow-navy-700/20 transition"><i class="fa-solid fa-user-plus mr-1"></i> เพิ่มผู้ใช้งาน</button>
+            </div>
+            <div id="usersTable"></div>
+          </div>
+        </section>
+
+        <!-- Account -->
+        <section id="view-account" class="view hidden">
+          <form id="pwForm" class="max-w-lg bg-white rounded-2xl shadow-card ring-1 ring-slate-200/60 p-6 sm:p-8 space-y-5">
+            <div><h2 class="text-lg font-bold">เปลี่ยนรหัสผ่าน</h2><p class="text-sm text-slate-500">รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร</p></div>
+            <div><label class="label">รหัสผ่านปัจจุบัน</label><input id="pwCurrent" type="password" class="input" autocomplete="current-password" required></div>
+            <div><label class="label">รหัสผ่านใหม่</label><input id="pwNew" type="password" class="input" autocomplete="new-password" required></div>
+            <div><label class="label">ยืนยันรหัสผ่านใหม่</label><input id="pwNew2" type="password" class="input" autocomplete="new-password" required></div>
+            <button class="rounded-xl px-6 py-3 font-semibold bg-navy-700 hover:bg-navy-800 text-white transition"><i class="fa-solid fa-floppy-disk mr-1"></i> บันทึกรหัสผ่าน</button>
+          </form>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ================= Booking modal ================= -->
+  <div id="bookingModal" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" data-close></div>
+    <div class="relative mx-auto my-6 sm:my-12 w-[calc(100%-2rem)] max-w-3xl bg-white rounded-2xl shadow-2xl max-h-[calc(100vh-3rem)] sm:max-h-[calc(100vh-6rem)] flex flex-col">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 id="bookingModalTitle" class="text-lg font-bold">เพิ่มการจอง</h3>
+        <button data-close class="w-9 h-9 rounded-lg hover:bg-slate-100 text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="bookingForm" class="p-6 overflow-y-auto grid sm:grid-cols-2 gap-4" novalidate>
+        <input type="hidden" name="id">
+        <div class="sm:col-span-2"><label class="label">ชื่อศาลที่ขอนัดประชุม<span class="req">*</span></label><input name="court_name" class="input" required maxlength="200"></div>
+        <div><label class="label">วันที่นัดประชุม<span class="req">*</span></label><input name="meeting_date" id="bDate" class="input" required></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="label">เวลาเริ่ม<span class="req">*</span></label><input type="time" name="start_time" class="input" required></div>
+          <div><label class="label">เวลาสิ้นสุด<span class="req">*</span></label><input type="time" name="end_time" class="input" required></div>
+        </div>
+        <div><label class="label">หมายเลขคดีดำ<span class="req">*</span></label><input name="black_case" class="input" required maxlength="100"></div>
+        <div><label class="label">หมายเลขคดีแดง</label><input name="red_case" class="input" maxlength="100"></div>
+        <div class="sm:col-span-2"><label class="label">เหตุที่นัด<span class="req">*</span></label><textarea name="reason" rows="2" class="input" required maxlength="1000"></textarea></div>
+        <div><label class="label">ผู้ติดต่อ / ส่วนงาน<span class="req">*</span></label><input name="contact_name" class="input" required maxlength="200"></div>
+        <div><label class="label">เบอร์โทรศัพท์<span class="req">*</span></label><input name="phone" class="input" required maxlength="50"></div>
+        <div><label class="label">IP Address<span class="req">*</span></label><input name="ip_address" class="input font-mono" required maxlength="15"></div>
+        <div><label class="label">สถานะ</label><select name="status" class="input"><option value="confirmed">ยืนยันแล้ว</option><option value="pending">รอตรวจสอบ</option><option value="cancelled">ยกเลิก</option></select></div>
+        <div class="sm:col-span-2"><label class="label">หมายเหตุ (เห็นเฉพาะเจ้าหน้าที่)</label><textarea name="note" rows="2" class="input" maxlength="1000"></textarea></div>
+        <p id="bookingMeta" class="sm:col-span-2 text-xs text-slate-400"></p>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
+        <button data-close class="rounded-xl px-5 py-2.5 font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">ยกเลิก</button>
+        <button id="bookingSave" class="rounded-xl px-6 py-2.5 font-semibold bg-navy-700 hover:bg-navy-800 text-white transition"><i class="fa-solid fa-floppy-disk mr-1"></i> บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= User modal ================= -->
+  <div id="userModal" class="hidden fixed inset-0 z-50">
+    <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" data-close></div>
+    <div class="relative mx-auto my-12 w-[calc(100%-2rem)] max-w-lg bg-white rounded-2xl shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 id="userModalTitle" class="text-lg font-bold">เพิ่มผู้ใช้งาน</h3>
+        <button data-close class="w-9 h-9 rounded-lg hover:bg-slate-100 text-slate-500"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form id="userForm" class="p-6 space-y-4" novalidate>
+        <input type="hidden" name="id">
+        <div><label class="label">ชื่อ-สกุล<span class="req">*</span></label><input name="display_name" class="input" required maxlength="100"></div>
+        <div><label class="label">ชื่อผู้ใช้<span class="req">*</span></label><input name="username" class="input" autocomplete="off" required maxlength="32"><p class="hint">a-z, 0-9, จุด, ขีด ความยาว 3-32 ตัว (แก้ไขภายหลังไม่ได้)</p></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="label">สิทธิ์</label><select name="role" class="input"><option value="staff">เจ้าหน้าที่</option><option value="admin">ผู้ดูแลระบบ</option></select></div>
+          <div><label class="label">สถานะ</label><select name="is_active" class="input"><option value="true">ใช้งาน</option><option value="false">ปิดใช้งาน</option></select></div>
+        </div>
+        <div><label class="label" id="userPwLabel">รหัสผ่าน<span class="req">*</span></label>
+          <div class="flex gap-2"><input name="password" type="text" class="input font-mono" autocomplete="new-password" maxlength="100">
+          <button type="button" id="genPw" class="shrink-0 rounded-xl px-3 border border-slate-200 hover:bg-slate-50 text-slate-600 text-sm" title="สุ่มรหัสผ่าน"><i class="fa-solid fa-shuffle"></i></button></div>
+          <p class="hint" id="userPwHint">อย่างน้อย 8 ตัวอักษร</p></div>
+      </form>
+      <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
+        <button data-close class="rounded-xl px-5 py-2.5 font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition">ยกเลิก</button>
+        <button id="userSave" class="rounded-xl px-6 py-2.5 font-semibold bg-navy-700 hover:bg-navy-800 text-white transition"><i class="fa-solid fa-floppy-disk mr-1"></i> บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/th.js"></script>
+  <script src="/assets/common.js"></script>
+  <script src="/assets/admin.js"></script>
+</body>
+</html>
