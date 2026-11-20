@@ -268,8 +268,11 @@
       </div>
       <form id="bookingForm" class="p-6 overflow-y-auto grid sm:grid-cols-2 gap-4" novalidate>
         <input type="hidden" name="id">
-        <div class="sm:col-span-2"><label class="label">ชื่อศาลที่ขอนัดประชุม<span class="req">*</span></label><input name="court_name" class="input" required maxlength="200"></div>
-        <div><label class="label">วันที่นัดประชุม<span class="req">*</span></label><input name="meeting_date" id="bDate" class="input" required></div>
+        <div class="sm:col-span-2"><label class="label">ชื่อศาลที่ขอนัดประชุม<span class="req">*</span></label><input name="court_name" id="bCourt" class="input" placeholder="พิมพ์เพื่อค้นหา หรือคลิกเพื่อเลือกศาล" required maxlength="200"></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="label">วันที่นัดประชุม<span class="req">*</span></label><input name="meeting_date" id="bDate" class="input" required></div>
+          <div><label class="label">ถึงวันที่</label><input name="end_date" id="bEnd" class="input" placeholder="วันเดียวกัน"></div>
+        </div>
         <div class="grid grid-cols-2 gap-3">
           <div><label class="label">เวลาเริ่ม<span class="req">*</span></label><input type="time" name="start_time" class="input" required></div>
           <div><label class="label">เวลาสิ้นสุด<span class="req">*</span></label><input type="time" name="end_time" class="input" required></div>
@@ -322,6 +325,7 @@
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/th.js"></script>
+  <script src="/assets/courts.js"></script>
   <script src="/assets/common.js"></script>
   <script src="/assets/admin.js"></script>
 </body>

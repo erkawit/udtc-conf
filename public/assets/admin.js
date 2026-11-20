@@ -125,13 +125,15 @@ function renderDashboard() {
   const today = todayYMD();
   const d7 = new Date(); d7.setDate(d7.getDate() + 7);
   const week = toYMD(d7);
-  $('#dToday').textContent = active.filter((b) => b.meeting_date === today).length;
-  $('#dWeek').textContent = active.filter((b) => b.meeting_date >= today && b.meeting_date <= week).length;
-  $('#dMonth').textContent = active.filter((b) => b.meeting_date.startsWith(today.slice(0, 7))).length;
+  const m0 = today.slice(0, 7) + '-01';
+  const mEnd = toYMD(new Date(Number(today.slice(0, 4)), Number(today.slice(5, 7)), 0));
+  $('#dToday').textContent = active.filter((b) => coversDate(b, today)).length;
+  $('#dWeek').textContent = active.filter((b) => b.meeting_date <= week && endDateOf(b) >= today).length;
+  $('#dMonth').textContent = active.filter((b) => b.meeting_date <= mEnd && endDateOf(b) >= m0).length;
   $('#dAll').textContent = bookings.length.toLocaleString('th-TH');
   $('#dTodayLabel').textContent = thaiDate(today, { short: true });
 
-  const todays = active.filter((b) => b.meeting_date === today).sort((a, b) => a.start_time.localeCompare(b.start_time));
+  const todays = active.filter((b) => coversDate(b, today)).sort((a, b) => a.start_time.localeCompare(b.start_time));
   $('#dTodayList').innerHTML = todays.length
     ? todays.map((b) => `<li class="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 cursor-pointer" data-edit="${b.id}">
         <div class="w-24 shrink-0 font-semibold text-navy-700">${b.start_time}–${b.end_time}</div>
@@ -142,7 +144,7 @@ function renderDashboard() {
   const recent = [...bookings].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))).slice(0, 6);
   $('#dRecentList').innerHTML = recent.length
     ? recent.map((b) => `<li class="px-6 py-3 flex items-center gap-4 hover:bg-slate-50 cursor-pointer" data-edit="${b.id}">
-        <div class="min-w-0 flex-1"><div class="font-medium truncate">${esc(b.court_name)}</div><div class="text-sm text-slate-500">${thaiDate(b.meeting_date, { short: true })} · ${b.start_time}–${b.end_time} น.</div></div>
+        <div class="min-w-0 flex-1"><div class="font-medium truncate">${esc(b.court_name)}</div><div class="text-sm text-slate-500">${thaiDateRange(b, { short: true })}${dayCount(b) > 1 ? ` (${dayCount(b)} วัน)` : ''} · ${b.start_time}–${b.end_time} น.</div></div>
         ${statusBadge(b.status)}</li>`).join('')
     : '<li class="px-6 py-10 text-center text-slate-400">ยังไม่มีข้อมูล</li>';
   $$('[data-edit]', $('#view-dashboard')).forEach((li) => li.addEventListener('click', () => openBookingModal(bookings.find((b) => b.id == li.dataset.edit))));
@@ -153,7 +155,7 @@ const bookingsTable = createTable({
   pageSize: 15,
   columns: [
     { title: '#', tdClass: 'text-slate-400 w-10', render: (_, i) => i + 1 },
-    { title: 'วันที่ / เวลา', render: (b) => `<div class="font-semibold whitespace-nowrap">${thaiDate(b.meeting_date, { short: true })}</div><div class="text-navy-600 text-sm whitespace-nowrap">${b.start_time}–${b.end_time} น.</div>` },
+    { title: 'วันที่ / เวลา', render: (b) => `<div class="font-semibold whitespace-nowrap">${thaiDateRange(b, { short: true })}</div>${dayCount(b) > 1 ? `<span class="inline-flex rounded-full bg-gold-50 text-gold-700 ring-1 ring-gold-100 px-1.5 py-0.5 text-[11px] font-semibold"><i class="fa-solid fa-arrows-left-right mr-1"></i>${dayCount(b)} วัน</span>` : ''}<div class="text-navy-600 text-sm whitespace-nowrap">${b.start_time}–${b.end_time} น.</div>` },
     { title: 'ศาล', render: (b) => `<div class="font-medium min-w-[10rem]">${esc(b.court_name)}</div><div class="text-xs text-slate-500 line-clamp-2">${esc(b.reason)}</div>` },
     { title: 'คดีดำ / แดง', render: (b) => `<div class="whitespace-nowrap">${esc(b.black_case)}</div>${b.red_case ? `<div class="text-rose-600 whitespace-nowrap">${esc(b.red_case)}</div>` : ''}` },
     { title: 'ผู้ติดต่อ', render: (b) => `<div>${esc(b.contact_name)}</div><div class="text-xs text-slate-500 whitespace-nowrap"><i class="fa-solid fa-phone mr-1"></i>${esc(b.phone)}</div>` },
@@ -187,7 +189,7 @@ function filteredBookings() {
   const from = $('#fFrom').value, to = $('#fTo').value;
   return bookings.filter((b) =>
     (!status || b.status === status) &&
-    (!from || b.meeting_date >= from) &&
+    (!from || endDateOf(b) >= from) &&
     (!to || b.meeting_date <= to) &&
     (!term || [b.court_name, b.black_case, b.red_case, b.reason, b.contact_name, b.phone, b.ip_address, b.note].join(' ').toLowerCase().includes(term)));
 }
@@ -205,7 +207,15 @@ $$('#userModal [data-close]').forEach((el) => el.addEventListener('click', () =>
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !Swal.isVisible()) { closeModal('#bookingModal'); closeModal('#userModal'); } });
 
 const bForm = $('#bookingForm');
-const bDate = thaiDatePicker('#bDate');
+const bEnd = thaiDatePicker('#bEnd');
+const bDate = thaiDatePicker('#bDate', {
+  onChange: () => {
+    const s = bForm.meeting_date.value;
+    if (s && (!bForm.end_date.value || bForm.end_date.value < s)) bEnd.setDate(s, false);
+    if (s) bEnd.set('minDate', s);
+  },
+});
+createCombobox($('#bCourt'), { groups: window.COURT_GROUPS || [] });
 
 function openBookingModal(b) {
   bForm.reset();
@@ -214,17 +224,18 @@ function openBookingModal(b) {
   bForm.id.value = b?.id || '';
   ['court_name', 'start_time', 'end_time', 'black_case', 'red_case', 'reason', 'contact_name', 'phone', 'ip_address', 'note'].forEach((k) => { bForm[k].value = b?.[k] || ''; });
   bForm.status.value = b?.status || 'confirmed';
-  if (b) bDate.setDate(b.meeting_date, true, 'Y-m-d'); else bDate.clear();
+  bEnd.set('minDate', null); bEnd.clear();
+  if (b) { bDate.setDate(b.meeting_date, true, 'Y-m-d'); bEnd.setDate(endDateOf(b), false, 'Y-m-d'); } else { bDate.setDate(new Date(), true); bForm.start_time.value = '08:30'; bForm.end_time.value = '16:30'; }
   $('#bookingMeta').innerHTML = b
     ? `บันทึกเมื่อ ${thaiDateTime(b.created_at)} (${b.source === 'web' ? 'จองผ่านเว็บ' : b.source === 'import' ? 'นำเข้าจากระบบเดิม' : 'เจ้าหน้าที่เพิ่ม'}) · แก้ไขล่าสุด ${thaiDateTime(b.updated_at)}${b.updated_by_name ? ' โดย ' + esc(b.updated_by_name) : ''}`
     : '';
   openModal('#bookingModal');
-  setTimeout(() => bForm.court_name.focus(), 50);
+
 }
 $('#addBookingBtn').addEventListener('click', () => openBookingModal(null));
 
 async function saveBooking(force = false) {
-  const data = Object.fromEntries(['court_name', 'meeting_date', 'start_time', 'end_time', 'black_case', 'red_case', 'reason', 'contact_name', 'phone', 'ip_address', 'status', 'note'].map((k) => [k, bForm[k].value.trim()]));
+  const data = Object.fromEntries(['court_name', 'meeting_date', 'end_date', 'start_time', 'end_time', 'black_case', 'red_case', 'reason', 'contact_name', 'phone', 'ip_address', 'status', 'note'].map((k) => [k, bForm[k].value.trim()]));
   const missing = ['court_name', 'meeting_date', 'start_time', 'end_time', 'black_case', 'reason', 'contact_name', 'phone', 'ip_address'].filter((k) => !data[k]);
   ['court_name', 'start_time', 'end_time', 'black_case', 'reason', 'contact_name', 'phone', 'ip_address'].forEach((k) => bForm[k].classList.toggle('is-invalid', missing.includes(k)));
   bDate.altInput.classList.toggle('is-invalid', missing.includes('meeting_date'));
@@ -247,7 +258,7 @@ bForm.addEventListener('submit', (e) => { e.preventDefault(); saveBooking(); });
 
 async function deleteBooking(b) {
   const ok = await confirmDanger('ลบรายการจองนี้?',
-    `<div class="text-left bg-slate-50 rounded-xl p-4 text-[15px]"><b>${esc(b.court_name)}</b><br>${thaiDate(b.meeting_date)} ${b.start_time}–${b.end_time} น.<br>คดีดำ ${esc(b.black_case)}</div>
+    `<div class="text-left bg-slate-50 rounded-xl p-4 text-[15px]"><b>${esc(b.court_name)}</b><br>${thaiDateRange(b)} ${b.start_time}–${b.end_time} น.<br>คดีดำ ${esc(b.black_case)}</div>
      <p class="mt-3 text-sm text-rose-600">การลบไม่สามารถกู้คืนได้ หากต้องการเก็บประวัติ แนะนำให้เปลี่ยนสถานะเป็น "ยกเลิก" แทน</p>`);
   if (!ok) return;
   try {
@@ -261,9 +272,9 @@ async function deleteBooking(b) {
 $('#csvBtn').addEventListener('click', () => {
   const rows = filteredBookings();
   if (!rows.length) return SwalTheme.fire({ icon: 'info', title: 'ไม่มีข้อมูลให้ส่งออก' });
-  const head = ['ที่', 'วันที่', 'เวลาเริ่ม', 'เวลาสิ้นสุด', 'ชื่อศาล', 'คดีดำ', 'คดีแดง', 'เหตุที่นัด', 'ผู้ติดต่อ', 'โทรศัพท์', 'IP Address', 'สถานะ', 'หมายเหตุ'];
+  const head = ['ที่', 'วันที่', 'ถึงวันที่', 'จำนวนวัน', 'เวลาเริ่ม', 'เวลาสิ้นสุด', 'ชื่อศาล', 'คดีดำ', 'คดีแดง', 'เหตุที่นัด', 'ผู้ติดต่อ', 'โทรศัพท์', 'IP Address', 'สถานะ', 'หมายเหตุ'];
   const sorted = [...rows].sort((a, b) => (a.meeting_date + a.start_time).localeCompare(b.meeting_date + b.start_time));
-  const lines = sorted.map((b, i) => [i + 1, thaiDate(b.meeting_date), b.start_time, b.end_time, b.court_name, b.black_case, b.red_case, b.reason, b.contact_name, b.phone, b.ip_address, STATUS_LABEL[b.status], b.note]);
+  const lines = sorted.map((b, i) => [i + 1, thaiDate(b.meeting_date), thaiDate(endDateOf(b)), dayCount(b), b.start_time, b.end_time, b.court_name, b.black_case, b.red_case, b.reason, b.contact_name, b.phone, b.ip_address, STATUS_LABEL[b.status], b.note]);
   const csv = [head, ...lines].map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' }));
@@ -290,7 +301,7 @@ $('#printBtn').addEventListener('click', async () => {
       },
     });
     if (!r.isConfirmed) return;
-    rows = rows.filter((b) => b.meeting_date >= r.value.f && b.meeting_date <= r.value.t);
+    rows = rows.filter((b) => endDateOf(b) >= r.value.f && b.meeting_date <= r.value.t);
     printReport(rows, r.value.f, r.value.t);
   } else {
     printReport(rows, from, to);
@@ -304,7 +315,7 @@ function printReport(rows, from, to) {
   const now = new Date();
   const range = from && to ? `ระหว่างวันที่ ${thaiDate(from)} ถึง ${thaiDate(to)}` : from ? `ตั้งแต่วันที่ ${thaiDate(from)}` : to ? `ถึงวันที่ ${thaiDate(to)}` : 'ทุกช่วงเวลา';
   const body = rows.map((b, i) => `<tr>
-      <td class="c">${i + 1}</td><td class="c nw">${thaiDate(b.meeting_date, { short: true })}</td><td class="c nw">${b.start_time}–${b.end_time}</td>
+      <td class="c">${i + 1}</td><td class="c nw">${thaiDateRange(b, { short: true })}${dayCount(b) > 1 ? `<br><span class="muted">(${dayCount(b)} วัน)</span>` : ''}</td><td class="c nw">${b.start_time}–${b.end_time}</td>
       <td>${esc(b.court_name)}</td><td class="c">${esc(b.black_case)}${b.red_case ? `<br><span class="red">${esc(b.red_case)}</span>` : ''}</td>
       <td>${esc(b.reason)}</td><td>${esc(b.contact_name)}<br><span class="muted">${esc(b.phone)}</span></td><td class="c mono">${esc(b.ip_address)}</td></tr>`).join('');
   const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8"><title>รายงานการจองห้องประชุมทางไกล</title>

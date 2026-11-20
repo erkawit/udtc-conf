@@ -71,53 +71,20 @@
     if (opt.compact) document.body.classList.add('compact');
 
     let bookings = [];
-    const toEvents = () => bookings.map((r) => ({
-      id: String(r.id),
-      title: `${r.court_name} (${r.black_case})`,
-      start: `${r.meeting_date}T${r.start_time}`,
-      end: r.end_time > r.start_time ? `${r.meeting_date}T${r.end_time}` : undefined,
-      extendedProps: r,
-    }));
-
-    const calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-      locale: 'th',
+    const cal = createBookingCalendar(document.getElementById('calendar'), {
+      getBookings: () => bookings,
       initialView: opt.view,
-      headerToolbar: {
-        left: opt.nav ? 'prev,next today' : '',
-        center: 'title',
-        right: opt.compact ? '' : 'dayGridMonth,timeGridWeek,listMonth',
-      },
-      buttonText: { today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', list: 'รายการ' },
-      titleFormat: (arg) => `${TH_MONTHS[arg.date.month]} ${arg.date.year + 543}`,
+      nav: opt.nav,
+      viewSwitcher: !opt.compact,
+      details: opt.details,
       height: '100%',
-      slotMinTime: '07:00:00', slotMaxTime: '19:00:00',
-      allDaySlot: false,
-      eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-      dayMaxEvents: 3,
-      noEventsText: 'ไม่มีการจองในช่วงนี้',
-      events: [],
-      eventClick: ({ event }) => {
-        if (!opt.details) return;
-        const r = event.extendedProps;
-        SwalTheme.fire({
-          title: esc(r.court_name),
-          html: `<div class="text-left space-y-2 text-[15px]">
-            <div><i class="fa-regular fa-calendar w-5 text-navy-500"></i> ${thaiDate(r.meeting_date, { weekday: true })}</div>
-            <div><i class="fa-regular fa-clock w-5 text-navy-500"></i> ${r.start_time}–${r.end_time} น.</div>
-            <div><i class="fa-solid fa-file-lines w-5 text-navy-500"></i> คดีดำ ${esc(r.black_case)}${r.red_case ? ` · คดีแดง <span class="text-rose-600">${esc(r.red_case)}</span>` : ''}</div>
-            <div><i class="fa-solid fa-comment w-5 text-navy-500"></i> ${esc(r.reason)}</div>
-            <div><i class="fa-solid fa-user w-5 text-navy-500"></i> ${esc(r.contact_name)}</div></div>`,
-        });
-      },
     });
-    calendar.render();
 
     async function load() {
       try {
         const { data } = await api('/api/bookings');
         bookings = data;
-        calendar.removeAllEvents();
-        calendar.addEventSource(toEvents());
+        cal.refresh();
         const now = new Date();
         document.getElementById('updated').textContent = `อัปเดต ${now.toTimeString().slice(0, 5)} น.`;
       } catch (err) {

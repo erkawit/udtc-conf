@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   id SERIAL PRIMARY KEY,
   court_name TEXT NOT NULL,
   meeting_date DATE NOT NULL,
+  end_date DATE,            -- วันสุดท้ายของการจองหลายวัน (NULL = วันเดียว)
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
   black_case TEXT NOT NULL,

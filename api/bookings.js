@@ -11,6 +11,7 @@ const STATUSES = ['confirmed', 'pending', 'cancelled'];
 const PUBLIC_COLS = `
   id, court_name,
   to_char(meeting_date, 'YYYY-MM-DD') AS meeting_date,
+  to_char(COALESCE(end_date, meeting_date), 'YYYY-MM-DD') AS end_date,
   to_char(start_time, 'HH24:MI') AS start_time,
   to_char(end_time, 'HH24:MI') AS end_time,
   black_case, red_case, reason, contact_name, status`;
@@ -24,6 +25,7 @@ function validate(d, { lenient = false } = {}) {
   const v = {
     court_name: str(d.court_name, 200),
     meeting_date: str(d.meeting_date, 10),
+    end_date: str(d.end_date, 10),
     start_time: str(d.start_time, 5),
     end_time: str(d.end_time, 5),
     black_case: str(d.black_case, 100),
@@ -49,6 +51,11 @@ function validate(d, { lenient = false } = {}) {
   if (missing.length) throw new HttpError(400, 'กรุณากรอก: ' + missing.join(', '));
   if (!DATE_RE.test(v.meeting_date) || Number.isNaN(Date.parse(v.meeting_date))) throw new HttpError(400, 'รูปแบบวันที่ไม่ถูกต้อง');
   if (!TIME_RE.test(v.start_time) || !TIME_RE.test(v.end_time)) throw new HttpError(400, 'รูปแบบเวลาไม่ถูกต้อง');
+  // Multi-day bookings: end_date is optional and defaults to the start date
+  if (!v.end_date) v.end_date = v.meeting_date;
+  if (!DATE_RE.test(v.end_date) || Number.isNaN(Date.parse(v.end_date))) throw new HttpError(400, 'รูปแบบวันที่สิ้นสุดไม่ถูกต้อง');
+  if (v.end_date < v.meeting_date) throw new HttpError(400, 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม');
+  if ((Date.parse(v.end_date) - Date.parse(v.meeting_date)) / 86400000 > 31) throw new HttpError(400, 'จองต่อเนื่องได้ไม่เกิน 31 วัน');
   if (lenient) return v;
   if (v.end_time <= v.start_time) throw new HttpError(400, 'เวลาสิ้นสุดต้องหลังเวลาเริ่ม');
   if (!IP_RE.test(v.ip_address)) throw new HttpError(400, 'รูปแบบ IP Address ไม่ถูกต้อง (เช่น 192.168.1.10)');
@@ -58,13 +65,17 @@ function validate(d, { lenient = false } = {}) {
 
 async function findConflicts(v, excludeId = 0) {
   return q(
-    `SELECT id, court_name, to_char(start_time,'HH24:MI') AS start_time, to_char(end_time,'HH24:MI') AS end_time
+    `SELECT id, court_name,
+            to_char(meeting_date,'YYYY-MM-DD') AS meeting_date,
+            to_char(COALESCE(end_date, meeting_date),'YYYY-MM-DD') AS end_date,
+            to_char(start_time,'HH24:MI') AS start_time, to_char(end_time,'HH24:MI') AS end_time
        FROM bookings
-      WHERE meeting_date = $1 AND status <> 'cancelled'
+      WHERE meeting_date <= $5::date AND COALESCE(end_date, meeting_date) >= $1::date
+        AND status <> 'cancelled'
         AND start_time < $3::time AND end_time > $2::time
         AND id <> $4
-      ORDER BY start_time`,
-    [v.meeting_date, v.start_time, v.end_time, excludeId]
+      ORDER BY meeting_date, start_time`,
+    [v.meeting_date, v.start_time, v.end_time, excludeId, v.end_date]
   );
 }
 
@@ -88,11 +99,11 @@ async function importItems(items, me) {
       if (!IP_RE.test(v.ip_address) && v.ip_address !== '-') notes.push('IP ในข้อมูลเดิมไม่ถูกต้อง');
       const createdAt = item.created_at && !Number.isNaN(Date.parse(item.created_at)) ? item.created_at : null;
       await q(
-        `INSERT INTO bookings (court_name, meeting_date, start_time, end_time, black_case, red_case, reason,
+        `INSERT INTO bookings (court_name, meeting_date, end_date, start_time, end_time, black_case, red_case, reason,
                                contact_name, phone, ip_address, note, source, updated_by, created_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'import',$12, COALESCE($13::timestamptz, now()))`,
+         VALUES ($1,$2,$14,$3,$4,$5,$6,$7,$8,$9,$10,$11,'import',$12, COALESCE($13::timestamptz, now()))`,
         [v.court_name, v.meeting_date, v.start_time, v.end_time, v.black_case, v.red_case, v.reason,
-          v.contact_name, v.phone, v.ip_address, notes.join(' / '), me.id, createdAt]
+          v.contact_name, v.phone, v.ip_address, notes.join(' / '), me.id, createdAt, v.end_date]
       );
       inserted++;
     } catch (e) {
@@ -150,12 +161,12 @@ export default handler(async (req, res) => {
     const status = me && STATUSES.includes(data.status) ? data.status : 'confirmed';
     const note = me ? str(data.note, 1000) : '';
     const [row] = await q(
-      `INSERT INTO bookings (court_name, meeting_date, start_time, end_time, black_case, red_case, reason,
+      `INSERT INTO bookings (court_name, meeting_date, end_date, start_time, end_time, black_case, red_case, reason,
                              contact_name, phone, ip_address, status, note, source, updated_by)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+       VALUES ($1,$2,$15,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING ${PUBLIC_COLS}`,
       [v.court_name, v.meeting_date, v.start_time, v.end_time, v.black_case, v.red_case, v.reason,
-        v.contact_name, v.phone, v.ip_address, status, note, me ? 'admin' : 'web', me?.id ?? null]
+        v.contact_name, v.phone, v.ip_address, status, note, me ? 'admin' : 'web', me?.id ?? null, v.end_date]
     );
     return res.status(201).json({ ok: true, data: row });
   }
@@ -172,12 +183,12 @@ export default handler(async (req, res) => {
       if (conflicts.length) throw conflictError(conflicts);
     }
     const rows = await q(
-      `UPDATE bookings SET court_name=$1, meeting_date=$2, start_time=$3, end_time=$4, black_case=$5, red_case=$6,
+      `UPDATE bookings SET court_name=$1, meeting_date=$2, end_date=$15, start_time=$3, end_time=$4, black_case=$5, red_case=$6,
               reason=$7, contact_name=$8, phone=$9, ip_address=$10, status=$11, note=$12,
               updated_at=now(), updated_by=$13
         WHERE id=$14 RETURNING id`,
       [v.court_name, v.meeting_date, v.start_time, v.end_time, v.black_case, v.red_case, v.reason,
-        v.contact_name, v.phone, v.ip_address, status, str(data.note, 1000), me.id, id]
+        v.contact_name, v.phone, v.ip_address, status, str(data.note, 1000), me.id, id, v.end_date]
     );
     if (!rows.length) throw new HttpError(404, 'ไม่พบรายการนี้');
     return res.status(200).json({ ok: true });

@@ -78,14 +78,23 @@
           <div class="px-6 sm:px-8 py-5 border-b border-slate-100">
             <h2 class="text-xl font-bold text-slate-800">แบบฟอร์มจองห้องประชุมทางไกล</h2>
             <p class="text-sm text-slate-500 mt-1">ช่องที่มีเครื่องหมาย <span class="text-rose-600">*</span> จำเป็นต้องกรอก</p>
+            <div id="memoryNote" class="hidden mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100 px-4 py-2.5 text-sm">
+              <span><i class="fa-solid fa-clock-rotate-left mr-1"></i> เติมข้อมูลจากการจองครั้งล่าสุดให้แล้ว กรุณาตรวจสอบก่อนบันทึก</span>
+              <button type="button" id="forgetBtn" class="ml-auto font-semibold underline underline-offset-2 hover:text-emerald-950">ไม่ต้องจำข้อมูลในเครื่องนี้</button>
+            </div>
           </div>
           <form id="bookingForm" class="p-6 sm:p-8 space-y-7" novalidate>
             <fieldset>
               <legend class="flex items-center gap-2 text-sm font-bold text-navy-700 mb-4"><span class="w-6 h-6 rounded-full bg-navy-50 grid place-items-center text-xs">1</span> วันและเวลา</legend>
-              <div class="grid sm:grid-cols-3 gap-4">
+              <div class="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label class="label" for="meeting_date">วันที่นัดประชุม<span class="req">*</span></label>
                   <input id="meeting_date" name="meeting_date" class="input" placeholder="เลือกวันที่" required>
+                </div>
+                <div>
+                  <label class="label" for="end_date">ถึงวันที่ <span class="font-normal text-slate-400">(กรณีจองหลายวัน)</span></label>
+                  <input id="end_date" name="end_date" class="input" placeholder="วันเดียวกัน">
+                  <p id="daysHint" class="hint">จองวันเดียว — เลือกวันอื่นหากต้องการจองต่อเนื่องหลายวัน</p>
                 </div>
                 <div>
                   <label class="label" for="start_time">เวลาเริ่ม<span class="req">*</span></label>
@@ -104,15 +113,16 @@
               <div class="grid sm:grid-cols-2 gap-4">
                 <div class="sm:col-span-2">
                   <label class="label" for="court_name">ชื่อศาลที่ขอนัดประชุมผ่านจอภาพ<span class="req">*</span></label>
-                  <input id="court_name" name="court_name" class="input" placeholder="เช่น ศาลจังหวัดขอนแก่น" required maxlength="200">
+                  <input id="court_name" name="court_name" class="input" placeholder="พิมพ์เพื่อค้นหา หรือคลิกเพื่อเลือกศาล" required maxlength="200">
+                  <p class="hint">พิมพ์บางส่วนของชื่อ เช่น “ขอนแก่น” หรือ “ภาค 4” — หากไม่มีในรายการ พิมพ์ชื่อเองได้</p>
                 </div>
                 <div>
                   <label class="label" for="black_case">หมายเลขคดีดำ<span class="req">*</span></label>
-                  <input id="black_case" name="black_case" class="input" placeholder="เช่น อ.123/2568" required maxlength="100">
+                  <input id="black_case" name="black_case" list="dl_black_case" autocomplete="off" class="input" placeholder="เช่น อ.123/2568" required maxlength="100">
                 </div>
                 <div>
                   <label class="label" for="red_case">หมายเลขคดีแดง</label>
-                  <input id="red_case" name="red_case" class="input" placeholder="ถ้ามี" maxlength="100">
+                  <input id="red_case" name="red_case" list="dl_red_case" autocomplete="off" class="input" placeholder="ถ้ามี" maxlength="100">
                 </div>
                 <div class="sm:col-span-2">
                   <label class="label" for="reason">เหตุที่นัด<span class="req">*</span></label>
@@ -126,21 +136,22 @@
               <div class="grid sm:grid-cols-2 gap-4">
                 <div>
                   <label class="label" for="contact_name">ชื่อผู้ติดต่อ / ส่วนงาน<span class="req">*</span></label>
-                  <input id="contact_name" name="contact_name" class="input" required maxlength="200">
+                  <input id="contact_name" name="contact_name" list="dl_contact_name" autocomplete="off" class="input" required maxlength="200">
                 </div>
                 <div>
                   <label class="label" for="phone">เบอร์โทรศัพท์<span class="req">*</span></label>
-                  <input type="tel" id="phone" name="phone" class="input" placeholder="เช่น 042-123456" required maxlength="50">
+                  <input type="tel" id="phone" name="phone" list="dl_phone" autocomplete="off" class="input" placeholder="เช่น 042-123456" required maxlength="50">
                 </div>
                 <div class="sm:col-span-2">
                   <label class="label" for="ip_address">หมายเลข IP Address ของศาลที่ขอประชุม<span class="req">*</span></label>
-                  <input id="ip_address" name="ip_address" class="input font-mono" placeholder="เช่น 192.168.1.10" inputmode="decimal" required maxlength="15">
+                  <input id="ip_address" name="ip_address" list="dl_ip_address" autocomplete="off" class="input font-mono" placeholder="เช่น 192.168.1.10" inputmode="decimal" required maxlength="15">
                 </div>
               </div>
             </fieldset>
 
+            <div id="datalists" class="hidden"></div>
             <div class="flex flex-col-reverse sm:flex-row gap-3 sm:justify-end pt-2">
-              <button type="reset" class="rounded-xl px-6 py-3 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition">ล้างข้อมูล</button>
+              <button type="reset" class="rounded-xl px-6 py-3 font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition"><i class="fa-solid fa-eraser mr-1"></i> ล้างแบบฟอร์ม</button>
               <button type="submit" id="submitBtn" class="inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-semibold text-white bg-navy-700 hover:bg-navy-800 shadow-lg shadow-navy-700/20 transition">
                 <i class="fa-solid fa-paper-plane"></i> ส่งคำขอจอง
               </button>
@@ -208,6 +219,7 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/th.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/th.global.min.js"></script>
+  <script src="/assets/courts.js"></script>
   <script src="/assets/common.js"></script>
   <script>
     let bookings = [];
@@ -229,14 +241,14 @@
     const table = createTable({
       el: '#publicTable',
       columns: [
-        { title: 'วันที่ / เวลา', render: (r) => `<div class="font-semibold text-slate-800 whitespace-nowrap">${thaiDate(r.meeting_date, { short: true })}</div><div class="text-navy-600 text-sm whitespace-nowrap"><i class="fa-regular fa-clock mr-1"></i>${r.start_time}–${r.end_time} น.</div>` },
+        { title: 'วันที่ / เวลา', render: (r) => `<div class="font-semibold text-slate-800 whitespace-nowrap">${thaiDateRange(r, { short: true })}${dayCount(r) > 1 ? ` <span class="ml-1 rounded-full bg-gold-50 text-gold-700 ring-1 ring-gold-100 px-1.5 py-0.5 text-[11px] font-semibold">${dayCount(r)} วัน</span>` : ''}</div><div class="text-navy-600 text-sm whitespace-nowrap"><i class="fa-regular fa-clock mr-1"></i>${r.start_time}–${r.end_time} น.</div>` },
         { title: 'ศาลที่ขอประชุม', render: (r) => `<div class="font-medium">${esc(r.court_name)}</div>` },
         { title: 'คดีดำ / คดีแดง', render: (r) => `<div class="whitespace-nowrap">${esc(r.black_case)}</div>${r.red_case ? `<div class="text-rose-600 whitespace-nowrap">${esc(r.red_case)}</div>` : ''}` },
         { title: 'เหตุที่นัด', tdClass: 'max-w-xs', render: (r) => esc(r.reason) },
         { title: 'ผู้ติดต่อ', render: (r) => esc(r.contact_name) },
         { title: 'สถานะ', render: (r) => statusBadge(r.status) },
       ],
-      rowClass: (r) => (r.meeting_date === todayYMD() ? 'bg-gold-50/60' : ''),
+      rowClass: (r) => (coversDate(r, todayYMD()) ? 'bg-gold-50/60' : ''),
       empty: 'ไม่พบรายการจอง',
     });
 
@@ -244,7 +256,7 @@
       const term = document.getElementById('search').value.trim().toLowerCase();
       const today = todayYMD();
       let rows = bookings.filter((r) =>
-        range === 'all' ? true : range === 'upcoming' ? r.meeting_date >= today : r.meeting_date < today);
+        range === 'all' ? true : range === 'upcoming' ? endDateOf(r) >= today : endDateOf(r) < today);
       if (range === 'upcoming') rows = [...rows].sort((a, b) => (a.meeting_date + a.start_time).localeCompare(b.meeting_date + b.start_time));
       if (term) rows = rows.filter((r) => [r.court_name, r.black_case, r.red_case, r.reason, r.contact_name, thaiDate(r.meeting_date)].join(' ').toLowerCase().includes(term));
       table.setRows(rows);
@@ -266,68 +278,40 @@
       const in7 = new Date(); in7.setDate(in7.getDate() + 7);
       const week = toYMD(in7);
       const month = today.slice(0, 7);
-      document.getElementById('statToday').textContent = bookings.filter((r) => r.meeting_date === today).length;
-      document.getElementById('statWeek').textContent = bookings.filter((r) => r.meeting_date >= today && r.meeting_date <= week).length;
-      document.getElementById('statMonth').textContent = bookings.filter((r) => r.meeting_date.startsWith(month)).length;
+      const monthEnd = toYMD(new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0));
+      document.getElementById('statToday').textContent = bookings.filter((r) => coversDate(r, today)).length;
+      document.getElementById('statWeek').textContent = bookings.filter((r) => r.meeting_date <= week && endDateOf(r) >= today).length;
+      document.getElementById('statMonth').textContent = bookings.filter((r) => r.meeting_date <= monthEnd && endDateOf(r) >= month + '-01').length;
 
       const nowHM = new Date().toTimeString().slice(0, 5);
       const upcoming = bookings
-        .filter((r) => r.meeting_date > today || (r.meeting_date === today && r.end_time >= nowHM))
+        .filter((r) => endDateOf(r) > today || (endDateOf(r) === today && r.end_time >= nowHM))
         .sort((a, b) => (a.meeting_date + a.start_time).localeCompare(b.meeting_date + b.start_time))
         .slice(0, 5);
       document.getElementById('upcomingList').innerHTML = upcoming.length
         ? upcoming.map((r) => {
             const d = parseYMD(r.meeting_date);
+            const days = dayCount(r);
             return `<li class="py-3 flex gap-3">
-              <div class="shrink-0 w-14 rounded-xl ${r.meeting_date === today ? 'bg-gold-500 text-white' : 'bg-navy-50 text-navy-800'} text-center py-1.5">
+              <div class="shrink-0 w-14 rounded-xl ${coversDate(r, today) ? 'bg-gold-500 text-white' : 'bg-navy-50 text-navy-800'} text-center py-1.5">
                 <div class="text-[11px] leading-none">${TH_MONTHS_SHORT[d.getMonth()]}</div>
                 <div class="text-xl font-bold leading-tight">${d.getDate()}</div>
               </div>
               <div class="min-w-0">
                 <div class="font-semibold text-slate-800 truncate">${esc(r.court_name)}</div>
-                <div class="text-sm text-slate-500">${r.start_time}–${r.end_time} น. · ${esc(r.black_case)}</div>
+                <div class="text-sm text-slate-500">${days > 1 ? `<span class="text-gold-700 font-semibold">${thaiDateRange(r, { short: true })} (${days} วัน)</span> · ` : ''}${r.start_time}–${r.end_time} น. · ${esc(r.black_case)}</div>
               </div></li>`;
           }).join('')
         : '<li class="py-6 text-center text-slate-400 text-sm">ยังไม่มีการจองที่กำลังจะถึง</li>';
     }
 
     /* ---------- Calendar ---------- */
-    function calendarEvents() {
-      return bookings.map((r) => ({
-        id: String(r.id),
-        title: `${r.court_name} (${r.black_case})`,
-        start: `${r.meeting_date}T${r.start_time}`,
-        end: `${r.meeting_date}T${r.end_time}`,
-        extendedProps: r,
-      }));
-    }
     function renderCalendar() {
-      if (calendar) { calendar.removeAllEvents(); calendar.addEventSource(calendarEvents()); calendar.updateSize(); return; }
-      calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
-        locale: 'th',
+      if (calendar) return calendar.refresh();
+      calendar = createBookingCalendar(document.getElementById('calendar'), {
+        getBookings: () => bookings,
         initialView: window.innerWidth < 768 ? 'listMonth' : 'dayGridMonth',
-        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,listMonth' },
-        buttonText: { today: 'วันนี้', month: 'เดือน', week: 'สัปดาห์', list: 'รายการ' },
-        titleFormat: (arg) => `${TH_MONTHS[arg.date.month]} ${arg.date.year + 543}`,
-        height: 'auto',
-        slotMinTime: '07:00:00', slotMaxTime: '19:00:00',
-        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
-        dayMaxEvents: 3,
-        events: calendarEvents(),
-        eventClick: ({ event }) => {
-          const r = event.extendedProps;
-          SwalTheme.fire({
-            title: esc(r.court_name),
-            html: `<div class="text-left space-y-2 text-[15px]">
-              <div><i class="fa-regular fa-calendar w-5 text-navy-500"></i> ${thaiDate(r.meeting_date, { weekday: true })}</div>
-              <div><i class="fa-regular fa-clock w-5 text-navy-500"></i> ${r.start_time}–${r.end_time} น.</div>
-              <div><i class="fa-solid fa-file-lines w-5 text-navy-500"></i> คดีดำ ${esc(r.black_case)}${r.red_case ? ` · คดีแดง <span class="text-rose-600">${esc(r.red_case)}</span>` : ''}</div>
-              <div><i class="fa-solid fa-comment w-5 text-navy-500"></i> ${esc(r.reason)}</div>
-              <div><i class="fa-solid fa-user w-5 text-navy-500"></i> ${esc(r.contact_name)}</div></div>`,
-          });
-        },
       });
-      calendar.render();
     }
 
     /* ---------- Load ---------- */
@@ -346,42 +330,135 @@
 
     /* ---------- Form ---------- */
     const form = document.getElementById('bookingForm');
+    const FIELDS = ['meeting_date', 'end_date', 'start_time', 'end_time', 'court_name', 'black_case', 'red_case', 'reason', 'contact_name', 'phone', 'ip_address'];
+    const REMEMBER = ['court_name', 'black_case', 'red_case', 'reason', 'contact_name', 'phone', 'ip_address'];
+    const LABELS = {
+      court_name: 'ชื่อศาลที่ขอนัดประชุม', meeting_date: 'วันที่นัดประชุม', end_date: 'ถึงวันที่', start_time: 'เวลา', black_case: 'หมายเลขคดีดำ',
+      red_case: 'หมายเลขคดีแดง', reason: 'เหตุที่นัด', contact_name: 'ผู้ติดต่อ / ส่วนงาน', phone: 'เบอร์โทรศัพท์', ip_address: 'IP Address',
+    };
+    const DEFAULT_START = '08:30', DEFAULT_END = '16:30';
+
+    let prevStart = '';
     const datePicker = thaiDatePicker('#meeting_date', {
+      minDate: 'today',
+      onChange: () => {
+        datePicker.altInput.classList.remove('is-invalid');
+        const start = form.meeting_date.value;
+        if (start) {
+          endPicker.set('minDate', start);
+          // keep "single day" unless the person already picked a later end date
+          if (!form.end_date.value || form.end_date.value === prevStart || form.end_date.value < start) endPicker.setDate(start, false);
+        }
+        prevStart = start;
+        updateDayHint();
+      },
+    });
+    const endPicker = thaiDatePicker('#end_date', {
       minDate: 'today',
       onChange: () => updateDayHint(),
     });
-
-    function updateDayHint() {
-      const ymd = form.meeting_date.value;
-      const hint = document.getElementById('dayHint');
-      if (!ymd) return hint.classList.add('hidden');
-      const sameDay = bookings.filter((r) => r.meeting_date === ymd).sort((a, b) => a.start_time.localeCompare(b.start_time));
-      hint.classList.remove('hidden');
-      hint.innerHTML = sameDay.length
-        ? `<i class="fa-solid fa-circle-info mr-1"></i> ${thaiDate(ymd, { weekday: true })} มีการจองแล้ว: ` +
-          sameDay.map((r) => `<b>${r.start_time}–${r.end_time}</b>`).join(', ')
-        : `<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> ${thaiDate(ymd, { weekday: true })} ยังไม่มีการจอง`;
+    function rangeOf() {
+      const s = form.meeting_date.value;
+      const e = form.end_date.value && form.end_date.value > s ? form.end_date.value : s;
+      return { meeting_date: s, end_date: e };
     }
 
-    form.addEventListener('reset', () => {
-      setTimeout(() => { datePicker.clear(); document.getElementById('dayHint').classList.add('hidden'); form.querySelectorAll('.is-invalid').forEach((x) => x.classList.remove('is-invalid')); });
+    const courtBox = createCombobox(form.court_name, {
+      groups: window.COURT_GROUPS || [],
+      recent: () => (FormMemory.read().history.court_name || []).slice(0, 5),
+    });
+
+    function renderDatalists() {
+      const h = FormMemory.read().history || {};
+      document.getElementById('datalists').innerHTML = ['black_case', 'red_case', 'contact_name', 'phone', 'ip_address']
+        .map((f) => `<datalist id="dl_${f}">${(h[f] || []).map((v) => `<option value="${esc(v)}"></option>`).join('')}</datalist>`).join('');
+    }
+
+    /** Defaults: today, 08:30–16:30, and the last values typed on this browser. */
+    function applyDefaults({ useMemory = true } = {}) {
+      form.querySelectorAll('.is-invalid').forEach((x) => x.classList.remove('is-invalid'));
+      FIELDS.forEach((f) => { if (f !== 'meeting_date' && f !== 'end_date') form[f].value = ''; });
+      prevStart = '';
+      endPicker.clear();
+      datePicker.setDate(new Date(), true);
+      form.start_time.value = DEFAULT_START;
+      form.end_time.value = DEFAULT_END;
+      const last = useMemory ? FormMemory.read().last : null;
+      if (last) REMEMBER.forEach((f) => { if (last[f]) form[f].value = last[f]; });
+      document.getElementById('memoryNote').classList.toggle('hidden', !last);
+      renderDatalists();
+      updateDayHint();
+    }
+
+    function updateDayHint() {
+      const range = rangeOf();
+      const hint = document.getElementById('dayHint');
+      const days = range.meeting_date ? dayCount(range) : 1;
+      document.getElementById('daysHint').innerHTML = days > 1
+        ? `<span class="inline-flex items-center gap-1 rounded-full bg-gold-50 text-gold-700 ring-1 ring-gold-100 px-2 py-0.5 font-semibold"><i class="fa-solid fa-arrows-left-right"></i> จองต่อเนื่อง ${days} วัน</span>`
+        : 'จองวันเดียว — เลือกวันอื่นหากต้องการจองต่อเนื่องหลายวัน';
+      if (!range.meeting_date) return hint.classList.add('hidden');
+      const label = thaiDateRange(range, { weekday: days === 1 });
+      const overlap = bookings
+        .filter((r) => r.meeting_date <= range.end_date && endDateOf(r) >= range.meeting_date)
+        .sort((a, b) => (a.meeting_date + a.start_time).localeCompare(b.meeting_date + b.start_time));
+      hint.classList.remove('hidden');
+      hint.innerHTML = overlap.length
+        ? `<i class="fa-solid fa-circle-info mr-1"></i> ${label} มีการจองแล้ว: ` +
+          overlap.map((r) => `<b>${days > 1 || dayCount(r) > 1 ? thaiDateRange(r, { short: true }) + ' ' : ''}${r.start_time}–${r.end_time}</b>`).join(', ')
+        : `<i class="fa-solid fa-circle-check mr-1 text-emerald-600"></i> ${label} ยังไม่มีการจอง`;
+    }
+
+    form.addEventListener('reset', (e) => {
+      e.preventDefault();
+      applyDefaults({ useMemory: false });
+    });
+    document.getElementById('forgetBtn').addEventListener('click', async () => {
+      const r = await SwalTheme.fire({
+        icon: 'question', title: 'ล้างข้อมูลที่จำไว้?',
+        text: 'ข้อมูลที่เคยกรอกซึ่งเก็บไว้ในเบราว์เซอร์นี้จะถูกลบ และแบบฟอร์มจะว่างเปล่าในครั้งถัดไป',
+        showCancelButton: true, confirmButtonText: 'ล้างข้อมูล',
+      });
+      if (!r.isConfirmed) return;
+      FormMemory.clear();
+      applyDefaults({ useMemory: false });
+      Toast.fire({ icon: 'success', title: 'ล้างข้อมูลที่จำไว้แล้ว' });
     });
     form.addEventListener('input', (e) => e.target.classList.remove('is-invalid'));
 
     function collect() {
-      const fields = ['meeting_date', 'start_time', 'end_time', 'court_name', 'black_case', 'red_case', 'reason', 'contact_name', 'phone', 'ip_address'];
-      const data = Object.fromEntries(fields.map((f) => [f, form[f].value.trim()]));
+      const data = Object.fromEntries(FIELDS.map((f) => [f, form[f].value.trim()]));
+      Object.assign(data, rangeOf());
       const invalid = [];
-      fields.forEach((f) => {
-        if (form[f].required && !data[f]) invalid.push(f);
-      });
+      FIELDS.forEach((f) => { if (form[f].required && !data[f]) invalid.push(f); });
       if (data.ip_address && !/^((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.){3}(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/.test(data.ip_address)) invalid.push('ip_address');
       if (data.start_time && data.end_time && data.end_time <= data.start_time) invalid.push('end_time');
-      fields.forEach((f) => {
+      FIELDS.forEach((f) => {
         const el = f === 'meeting_date' ? datePicker.altInput : form[f];
         el.classList.toggle('is-invalid', invalid.includes(f));
       });
       return { data, invalid };
+    }
+
+    function summaryTable(data) {
+      const rows = [
+        ['court_name', `<b>${esc(data.court_name)}</b>`],
+        ['meeting_date', dayCount(data) > 1
+          ? `${thaiDateRange(data)} <span class="ml-1 inline-flex rounded-full bg-gold-50 text-gold-700 ring-1 ring-gold-100 px-2 py-0.5 text-xs font-semibold">${dayCount(data)} วัน</span>`
+          : thaiDate(data.meeting_date, { weekday: true })],
+        ['start_time', `${data.start_time} – ${data.end_time} น.${dayCount(data) > 1 ? ' (ทุกวัน)' : ''}`],
+        ['black_case', esc(data.black_case)],
+        ['red_case', data.red_case ? `<span class="text-rose-600">${esc(data.red_case)}</span>` : '<span class="text-slate-400">-</span>'],
+        ['reason', esc(data.reason).replace(/\n/g, '<br>')],
+        ['contact_name', esc(data.contact_name)],
+        ['phone', esc(data.phone)],
+        ['ip_address', `<span class="font-mono">${esc(data.ip_address)}</span>`],
+      ];
+      return `<table class="w-full text-left text-[15px] border-collapse overflow-hidden rounded-xl ring-1 ring-slate-200">
+        ${rows.map(([k, v], i) => `<tr class="${i % 2 ? 'bg-white' : 'bg-slate-50'}">
+          <th class="w-[38%] align-top py-2 px-3 font-semibold text-slate-500 text-sm">${LABELS[k]}</th>
+          <td class="py-2 px-3 text-slate-800 break-words">${v}</td></tr>`).join('')}
+      </table>`;
     }
 
     async function submitBooking(data, force = false) {
@@ -390,16 +467,9 @@
       SwalTheme.fire({ title: 'กำลังบันทึก…', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       try {
         await api('/api/bookings', { method: 'POST', data: { ...data, force } });
-        await SwalTheme.fire({
-          icon: 'success',
-          title: 'จองสำเร็จ',
-          html: `<div class="text-left bg-slate-50 rounded-xl p-4 text-[15px] space-y-1">
-            <div><b>${esc(data.court_name)}</b></div>
-            <div>${thaiDate(data.meeting_date, { weekday: true })}</div>
-            <div>เวลา ${data.start_time}–${data.end_time} น.</div>
-            <div>คดีดำ ${esc(data.black_case)}</div></div>`,
-        });
-        form.reset();
+        FormMemory.save(data, REMEMBER);
+        await SwalTheme.fire({ icon: 'success', title: 'บันทึกการจองเรียบร้อย', html: summaryTable(data), width: 640 });
+        applyDefaults();
         await load();
         showTab('list');
       } catch (err) {
@@ -422,14 +492,14 @@
       }
       const ok = await SwalTheme.fire({
         icon: 'question',
-        title: 'ยืนยันการจอง',
-        html: `<div class="text-left bg-slate-50 rounded-xl p-4 text-[15px] space-y-1">
-          <div><b>${esc(data.court_name)}</b></div>
-          <div>${thaiDate(data.meeting_date, { weekday: true })} เวลา ${data.start_time}–${data.end_time} น.</div>
-          <div>คดีดำ ${esc(data.black_case)}${data.red_case ? ' / คดีแดง ' + esc(data.red_case) : ''}</div>
-          <div>IP ${esc(data.ip_address)}</div></div>`,
+        title: 'กรุณาตรวจสอบข้อมูลก่อนบันทึก',
+        html: summaryTable(data) + '<p class="mt-4 text-sm text-slate-500">หากข้อมูลถูกต้อง กด “ยืนยันและบันทึก”</p>',
+        width: 640,
         showCancelButton: true,
-        confirmButtonText: '<i class="fa-solid fa-check"></i> ยืนยัน',
+        reverseButtons: true,
+        focusConfirm: false,
+        confirmButtonText: '<i class="fa-solid fa-check"></i> ยืนยันและบันทึก',
+        cancelButtonText: '<i class="fa-solid fa-pen"></i> กลับไปแก้ไข',
       });
       if (ok.isConfirmed) submitBooking(data);
     });
@@ -437,7 +507,8 @@
     /* ---------- Init ---------- */
     const initial = location.hash.replace('#', '');
     if (['list', 'calendar'].includes(initial)) showTab(initial);
-    load();
+    applyDefaults();
+    load().then(updateDayHint);
   </script>
 </body>
 </html>
