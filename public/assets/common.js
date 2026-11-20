@@ -452,7 +452,8 @@ function createBookingCalendar(el, opts = {}) {
     dayMaxEvents: 3,
     moreLinkContent: (a) => `+ อีก ${a.num} รายการ`,
     noEventsText: 'ไม่มีการจองในช่วงนี้',
-    events: (info, success) => success(bookingEvents(getBookings(), cal.view?.type || initialView)),
+    // FullCalendar calls this during construction, so don't touch `cal` here — use the tracked view type
+    events: (info, success) => success(bookingEvents(getBookings(), lastType)),
     eventContent: bookingEventContent,
     eventDidMount: (arg) => {
       const b = arg.event.extendedProps.b;
